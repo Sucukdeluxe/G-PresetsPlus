@@ -1,6 +1,7 @@
 package extension.tools;
 
-import extension.GPresets;
+import utils.Messages;
+import extension.GRoomCloner;
 import extension.parsers.HWiredVariable;
 import extension.tools.importutils.*;
 import extension.tools.postconfig.ItemSource;
@@ -31,7 +32,7 @@ public class GPresetImporter {
 
     private final Object lock = new Object();
 
-    private GPresets extension = null;
+    private GRoomCloner extension = null;
     private List<String> needVariableIds = new ArrayList<>();
     private int variablesProcessed;
     private int variablesToProcess;
@@ -74,6 +75,9 @@ public class GPresetImporter {
     // expect furni drops on location described by key(string) -> "x|y|typeId"
     private Map<String, LinkedList<Integer>> expectFurniDrops = null;
     private BuildingImportState state = BuildingImportState.NONE;
+    private volatile boolean lastImportSucceeded = false;
+    private volatile boolean programmatic = false;
+    private volatile HPoint preferredStackTileLocation = null;
 
 
     private volatile int mainStackTile = -1;
@@ -87,7 +91,7 @@ public class GPresetImporter {
 
     private int heightOffset = 0;
 
-    public GPresetImporter(GPresets extension) {
+    public GPresetImporter(GRoomCloner extension) {
         this.extension = extension;
 
         extension.intercept(HMessage.Direction.TOSERVER, "Chat", this::onChat);
@@ -162,7 +166,7 @@ public class GPresetImporter {
         synchronized (lock) {
             if (state == BuildingImportState.SETUP_WIRED || state == BuildingImportState.MOVE_FURNITURE) {
                 message.setBlocked(true);
-                extension.sendVisualChatInfo("Don't adjust furniture while the importer is active!");
+                extension.sendVisualChatInfo(Messages.get("preset.import.no_furni_adjust"));
             }
         }
     }
@@ -171,7 +175,7 @@ public class GPresetImporter {
         synchronized (lock) {
             if (state != BuildingImportState.NONE) {
                 hMessage.setBlocked(true);
-                extension.sendVisualChatInfo("Can't drop furniture while the importer is active, please await the procedure or abort");
+                extension.sendVisualChatInfo(Messages.get("preset.import.no_drop"));
             }
         }
     }
@@ -222,17 +226,19 @@ public class GPresetImporter {
                 hMessage.setBlocked(true);
 
                 if (state != BuildingImportState.NONE) {
-                    extension.sendVisualChatInfo("Already importing preset.. finish up or abort first");
+                    extension.sendVisualChatInfo(Messages.get("preset.import.already_running"));
                 }
                 else if (!isReady()) {
                     if (presetConfig == null) {
-                        extension.sendVisualChatInfo("ERROR: select the preset first");
+                        extension.sendVisualChatInfo(Messages.get("preset.import.error.select_preset_first"));
                     }
                     else {
-                        extension.sendVisualChatInfo("ERROR: extension not fully initialized yet");
+                        extension.sendVisualChatInfo(Messages.get("preset.import.error.not_initialized"));
                     }
                 }
                 else {
+                    programmatic = false;
+                    preferredStackTileLocation = null;
                     prepare();
                     try {
                         String[] split = text.split(" ", 2);
@@ -251,7 +257,7 @@ public class GPresetImporter {
 
                 if (state != BuildingImportState.NONE) {
                     state = BuildingImportState.NONE;
-                    extension.sendVisualChatInfo("Successfully aborted importing");
+                    extension.sendVisualChatInfo(Messages.get("preset.import.aborted"));
                 }
             }
 
@@ -276,15 +282,15 @@ public class GPresetImporter {
             }
             Map<String, Integer> missing = AvailabilityChecker.missingItems(fakeDropInfo, extension.getInventory(), furniData);
             if (missing == null) {
-                extension.sendVisualChatInfo("ERROR: Inventory, catalog or furnidata is unavailable");
+                extension.sendVisualChatInfo(Messages.get("preset.import.error.resources_unavailable"));
             }
             else {
                 if (missing.size() != 0) {
                     if (extension.allowIncompleteBuilds()) {
-                        extension.sendVisualChatInfo("Some items were not available, building anyways..");
+                        extension.sendVisualChatInfo(Messages.get("preset.import.missing_items_continue"));
                     }
                     else {
-                        extension.sendVisualChatInfo("ERROR: Some items were not available, check the availability first!");
+                        extension.sendVisualChatInfo(Messages.get("preset.import.error.missing_items"));
                         return;
                     }
                 }
@@ -306,19 +312,21 @@ public class GPresetImporter {
                 });
 
                 if (allAvailableStackTiles.size() > 0) {
-                    extension.getLogger().log(String.format("Detected %d available types of stacktiles", allAvailableStackTiles.size()), "green");
+                    extension.getLogger().log(Messages.get("stacktile.detected_types", allAvailableStackTiles.size()), "green");
                 }
 
 //                originalStackTileLocation = extension.stackTile().getTile();
                 mainStackDimensions = extension.getStackTileSetting().getDimension();
 
                 state = BuildingImportState.AWAITING_UNOCCUPIED_SPACE;
-                extension.sendVisualChatInfo("Select unoccupied space in the room");
+                if (!programmatic) {
+                    extension.sendVisualChatInfo(Messages.get("preset.import.select_free_space"));
+                }
             }
 
         }
         else {
-            extension.sendVisualChatInfo("ERROR: No preset selected!");
+            extension.sendVisualChatInfo(Messages.get("preset.import.error.no_preset"));
         }
     }
 
@@ -335,7 +343,7 @@ public class GPresetImporter {
 
                 if (rootLocation == null) {
                     state = BuildingImportState.AWAITING_ROOT_LOCATION;
-                    extension.sendVisualChatInfo("Select where the preset should be imported");
+                    extension.sendVisualChatInfo(Messages.get("preset.import.select_root_location"));
                 }
                 else {
                     startAddingFurni = true;
@@ -359,7 +367,7 @@ public class GPresetImporter {
 
                 state = BuildingImportState.ADD_UNSTACKABLES;
                 new Thread(this::addUnstackables).start();
-                extension.sendVisualChatInfo("Adding furniture...");
+                extension.sendVisualChatInfo(Messages.get("preset.import.adding_furni"));
             }
         }
     }
@@ -389,10 +397,10 @@ public class GPresetImporter {
             if (offerId == -1) {
                 if (!extension.allowIncompleteBuilds()) {
                     state = BuildingImportState.NONE;
-                    extension.sendVisualChatInfo(String.format("ERROR: Couldn't find the item '%s' in BC warehouse.. aborting", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.error.bc_item_missing_abort", className));
                 }
                 else {
-                    extension.sendVisualChatInfo(String.format("Couldn't find the item '%s' in BC warehouse.. continuing", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.bc_item_missing_continue", className));
                 }
                 return;
             }
@@ -413,10 +421,10 @@ public class GPresetImporter {
             if (inventoryItems.size() == 0) {
                 if (!extension.allowIncompleteBuilds()) {
                     state = BuildingImportState.NONE;
-                    extension.sendVisualChatInfo(String.format("ERROR: Couldn't find '%s' in inventory.. aborting", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.error.inventory_item_missing_abort", className));
                 }
                 else {
-                    extension.sendVisualChatInfo(String.format("Couldn't find '%s' in inventory.. continuing", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.inventory_item_missing_continue", className));
                 }
                 return;
             }
@@ -620,6 +628,7 @@ public class GPresetImporter {
         while (state == BuildingImportState.MOVE_FURNITURE && i < moveList.size()) {
             PresetFurni moveFurni = moveList.get(i);
             i++;
+            logProgress(Messages.get("preset.import.progress.move_furni"), i, moveList.size());
             int realFurniId = realFurniIdMap.get(moveFurni.getFurniId());
 
             if (moveFurni.getState() != null) {
@@ -679,8 +688,9 @@ public class GPresetImporter {
         synchronized (lock) {
             if (state == BuildingImportState.MOVE_FURNITURE) {
                 state = BuildingImportState.NONE;
-                extension.sendVisualChatInfo("Imported the preset successfully");
-                extension.getLogger().log("Finished importing the preset!", "green");
+                lastImportSucceeded = true;
+                extension.sendVisualChatInfo(Messages.get("preset.import.success"));
+                extension.getLogger().log(Messages.get("preset.import.finished"), "green");
             }
         }
     }
@@ -730,9 +740,7 @@ public class GPresetImporter {
         while (state == BuildingImportState.SETUP_WIRED && i < allWireds.size()) {
             PresetWiredBase wiredBase = allWireds.get(i);
 
-            if ((i + 1) % 50 == 0) {
-                extension.getLogger().log(String.format("Setting up wired.. (%d/%d)", i+1, allWireds.size()), "orange");
-            }
+            logProgress(Messages.get("wired.setup.progress"), i + 1, allWireds.size());
 
             i++;
 
@@ -828,7 +836,7 @@ public class GPresetImporter {
             }
         }
         if (state == BuildingImportState.MOVE_FURNITURE) {
-            extension.sendVisualChatInfo("Setting furni in their correct position..");
+            extension.sendVisualChatInfo(Messages.get("preset.import.moving_furni"));
             moveFurniture();
         }
     }
@@ -864,9 +872,7 @@ public class GPresetImporter {
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_FURNITURE) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
 
-            if ((i + 1) % 50 == 0) {
-                extension.getLogger().log(String.format("Dropping furni.. (%d/%d)", i+1, furniDropInfos.size()), "orange");
-            }
+            logProgress(Messages.get("preset.import.progress.place_furni"), i + 1, furniDropInfos.size());
 
             dropFurni(dropInfo);
             i++;
@@ -889,8 +895,9 @@ public class GPresetImporter {
                     }
                     else {
                         state = BuildingImportState.NONE;
-                        extension.sendVisualChatInfo("ERROR: not all furniture were placed");
-                        extension.getLogger().log("ERROR: not all furniture were placed", "red");
+                        extension.sendVisualChatInfo(Messages.get("preset.import.error.not_all_placed"));
+                        extension.getLogger().log(Messages.get("preset.import.error.not_all_placed"), "red");
+                        logMissingDrops();
                     }
                 }
             }
@@ -903,7 +910,7 @@ public class GPresetImporter {
     private void setupAds() {
         List<PresetAdsBackground> adsBackgrounds = workingPresetConfig.getAdsBackgrounds();
         if (!adsBackgrounds.isEmpty()) {
-            extension.sendVisualChatInfo("Setting up ads backgrounds..");
+            extension.sendVisualChatInfo(Messages.get("preset.import.ads.setup"));
 
             int index = 0;
             while (index < adsBackgrounds.size() && state == BuildingImportState.SETUP_ADS) {
@@ -935,7 +942,7 @@ public class GPresetImporter {
             }
         }
         if (state == BuildingImportState.SETUP_WIRED) {
-            extension.sendVisualChatInfo("Setting up wired..");
+            extension.sendVisualChatInfo(Messages.get("wired.setup.start"));
             setupWired();
         }
     }
@@ -952,11 +959,36 @@ public class GPresetImporter {
         });
     }
 
+    private boolean isUsableStackTileArea(HPoint candidate) {
+        FloorState floor = extension.getFloorState();
+        char reference = floor.floorHeight(candidate.getX(), candidate.getY());
+        if (reference == 'x') return false;
+
+        for (int xOffset = 0; xOffset < mainStackDimensions; xOffset++) {
+            for (int yOffset = 0; yOffset < mainStackDimensions; yOffset++) {
+                if (floor.floorHeight(candidate.getX() + xOffset, candidate.getY() + yOffset) != reference) {
+                    return false;
+                }
+            }
+        }
+        return !locationContainsWired(candidate.getX(), candidate.getY())
+                && !locationContainsWired(candidate.getX() + 1, candidate.getY());
+    }
+
     private HPoint findStackTileLocation() {
         // can not be the unoccupied space
         // can also not be a place with wired in the first or second tile (top row)
         // this will be the place where all furniture is placed on
         FloorState floor = extension.getFloorState();
+
+        HPoint preferred = preferredStackTileLocation;
+        if (preferred != null) {
+            if (isUsableStackTileArea(preferred)) {
+                return preferred;
+            }
+            extension.getLogger().log(Messages.get("stacktile.spot.preferred_unusable",
+                    preferred.getX(), preferred.getY()), "orange");
+        }
 
 
         for (int x = 0; x < 64 - mainStackDimensions; x++) {
@@ -1010,6 +1042,7 @@ public class GPresetImporter {
         int i = 0;
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_UNSTACKABLES) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
+            logProgress(Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
             dropFurni(dropInfo);
 
             i++;
@@ -1031,8 +1064,100 @@ public class GPresetImporter {
 
     }
 
+    private static int progressStep(int total) {
+        if (total < 100) return 10;
+        if (total < 1000) return 50;
+        return 1000;
+    }
+
+    private void logProgress(String what, int done, int total) {
+        if (total <= 0) return;
+        if (done % progressStep(total) == 0 || done == total) {
+            extension.getLogger().log(Messages.get("preset.import.progress.format", what, done, total), "orange");
+        }
+    }
+
+    private void logMissingDrops() {
+        Map<String, Integer> missingByClass = new LinkedHashMap<>();
+        int total = 0;
+
+        FurniDataTools furniData = extension.getFurniDataTools();
+        for (Map.Entry<String, LinkedList<Integer>> entry : expectFurniDrops.entrySet()) {
+            int count = entry.getValue() == null ? 0 : entry.getValue().size();
+            if (count == 0) continue;
+            total += count;
+
+            String className = Messages.get("preset.import.missing.unknown_class");
+            try {
+                String[] parts = entry.getKey().split("\\|");
+                int typeId = Integer.parseInt(parts[2]);
+                String resolved = furniData == null ? null : furniData.getFloorItemName(typeId);
+                className = resolved != null ? resolved : ("typeId " + typeId);
+            } catch (Throwable ignored) {
+            }
+
+            missingByClass.put(className, missingByClass.getOrDefault(className, 0) + count);
+        }
+
+        extension.getLogger().log(Messages.get("preset.import.missing.header", total), "red");
+        for (Map.Entry<String, Integer> entry : missingByClass.entrySet()) {
+            extension.getLogger().log(Messages.get("preset.import.missing.item", entry.getKey(), entry.getValue()), "red");
+        }
+        extension.getLogger().log(Messages.get("preset.import.missing.hint"), "orange");
+    }
+
     public void reset() {
         state = BuildingImportState.NONE;
+    }
+
+    public boolean startImport(HPoint reserved, HPoint root, Integer heightOffsetOverride,
+                               HPoint preferredStackTile) {
+        synchronized (lock) {
+            if (state != BuildingImportState.NONE) {
+                extension.getLogger().log(Messages.get("preset.import.already_running.log"), "red");
+                return false;
+            }
+            if (!isReady()) {
+                extension.getLogger().log(notReadyReason(), "red");
+                return false;
+            }
+
+            lastImportSucceeded = false;
+            programmatic = true;
+            preferredStackTileLocation = preferredStackTile;
+            prepare();
+            if (state != BuildingImportState.AWAITING_UNOCCUPIED_SPACE) {
+                programmatic = false;
+                return false;
+            }
+
+            reservedSpace = reserved;
+            rootLocation = root;
+            heightOffset = heightOffsetOverride != null
+                    ? heightOffsetOverride
+                    : PresetUtils.lowestFloorPoint(extension.getFloorState(), workingPresetConfig, rootLocation);
+
+            state = BuildingImportState.ADD_UNSTACKABLES;
+            new Thread(this::addUnstackables).start();
+            extension.getLogger().log(String.format(Messages.get("preset.import.started"),
+                    root.getX(), root.getY(), reserved.getX(), reserved.getY(), heightOffset), "blue");
+            return true;
+        }
+    }
+
+    public boolean lastImportSucceeded() {
+        return lastImportSucceeded;
+    }
+
+    private String notReadyReason() {
+        if (presetConfig == null) return Messages.get("preset.none_selected");
+        if (!extension.getFloorState().inRoom()) return Messages.get("preset.import.not_ready.no_room");
+        if (!extension.furniDataReady()) return Messages.get("preset.import.not_ready.no_furnidata");
+        if (extension.getInventory().getState() != Inventory.InventoryState.LOADED) return Messages.get("preset.import.not_ready.no_inventory");
+        if (extension.stackTile() == null) return Messages.get("preset.import.not_ready.no_stacktile");
+        if (!extension.getPermissions().canMoveFurni()) return Messages.get("preset.import.not_ready.no_furni_rights");
+        if (extension.shouldExportWired() && !extension.getPermissions().canModifyWired()) return Messages.get("preset.import.not_ready.no_wired_rights");
+        return Messages.get("preset.import.not_ready.generic");
     }
 
     public void setPresetConfig(PresetConfig presetConfig) {

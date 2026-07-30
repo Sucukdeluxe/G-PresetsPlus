@@ -1,21 +1,22 @@
 package extension;
 
+import utils.Messages;
 import gearth.extensions.ExtensionInfo;
 import gearth.extensions.ThemedExtensionFormCreator;
 import javafx.stage.Stage;
 
 import java.net.URL;
 
-public class GPresetsLauncher extends ThemedExtensionFormCreator {
+public class GRoomClonerLauncher extends ThemedExtensionFormCreator {
 
     @Override
     protected String getTitle() {
-        return "G-Presets - Building & Wired Presets - " + GPresets.class.getAnnotation(ExtensionInfo.class).Version();
+        return "G-PresetsPlus - " + GRoomCloner.class.getAnnotation(ExtensionInfo.class).Version();
     }
 
     @Override
     protected URL getFormResource() {
-        return getClass().getResource("ui/gpresets.fxml");
+        return getClass().getResource("ui/groomcloner.fxml");
     }
 
     @Override
@@ -24,7 +25,7 @@ public class GPresetsLauncher extends ThemedExtensionFormCreator {
     }
 
     public static void main(String[] args) {
-        runExtensionForm(args, GPresetsLauncher.class);
+        runExtensionForm(args, GRoomClonerLauncher.class);
     }
 
 }

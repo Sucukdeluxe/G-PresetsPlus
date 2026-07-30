@@ -1,6 +1,7 @@
 package extension.tools;
 
-import extension.GPresets;
+import utils.Messages;
+import extension.GRoomCloner;
 import extension.tools.presetconfig.PresetConfig;
 import extension.tools.presetconfig.furni.PresetFurni;
 import furnidata.FurniDataTools;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AutoDonator {
-    private final GPresets extension;
+    private final GRoomCloner extension;
 
     public enum AutoDonateState {
         NONE,
@@ -24,7 +25,7 @@ public class AutoDonator {
 
     private volatile AutoDonateState state = AutoDonateState.NONE;
 
-    public AutoDonator(GPresets extension) {
+    public AutoDonator(GRoomCloner extension) {
         this.extension = extension;
 
         extension.intercept(HMessage.Direction.TOSERVER, "Chat", this::onChat);
@@ -41,14 +42,14 @@ public class AutoDonator {
 
             if (state != AutoDonateState.NONE) {
                 state = AutoDonateState.NONE;
-                extension.sendVisualChatInfo("Aborted auto donate");
+                extension.sendVisualChatInfo(Messages.get("inventory.donate.aborted"));
             }
         }
     }
 
     private void onSelfDonateItem(HMessage hMessage) {
         if (state == AutoDonateState.SELF_DONATING) {
-            extension.sendVisualChatInfo("Please wait for the auto donate to finish before donating yourself furni!");
+            extension.sendVisualChatInfo(Messages.get("inventory.donate.wait_before_manual"));
             hMessage.setBlocked(true);
         }
     }
@@ -65,13 +66,13 @@ public class AutoDonator {
 
     public void donateAll(boolean missingOnly) {
         if (isDonating()) {
-            extension.getLogger().log("Already donating, wait for it to finish, or say :abort in game!", "red");
+            extension.getLogger().log(Messages.get("inventory.donate.already_running"), "red");
             return;
         }
 
         PresetConfig preset = this.extension.getImporter().getPresetConfig();
         if (preset == null) {
-            extension.getLogger().log("Failed to start auto donate, no preset selected", "red");
+            extension.getLogger().log(Messages.get("inventory.donate.no_preset"), "red");
             return;
         }
 
@@ -81,7 +82,7 @@ public class AutoDonator {
         if (missingOnly) {
             Inventory inventory = extension.getInventory();
             if (inventory == null) {
-                extension.getLogger().log("Failed to start auto donate, inventory is not loaded", "red");
+                extension.getLogger().log(Messages.get("inventory.donate.inventory_not_loaded"), "red");
                 return;
             }
 
@@ -91,9 +92,9 @@ public class AutoDonator {
                     .filter(entry -> entry.getValue() > 0)
                     .collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            extension.getLogger().log("Donating missing furni, wait for it to finish", "orange");
+            extension.getLogger().log(Messages.get("inventory.donate.missing_started"), "orange");
         } else {
-            extension.getLogger().log("Donating all, wait for it to finish", "orange");
+            extension.getLogger().log(Messages.get("inventory.donate.all_started"), "orange");
         }
 
         donateFloorFurni(countByTypeId);
@@ -117,18 +118,18 @@ public class AutoDonator {
             int lastReportedCount = 0;
             for (Map.Entry<Integer, Integer> entry : countsByTypeId.entrySet()) {
                 if (state == AutoDonateState.NONE) {
-                    extension.getLogger().log("Aborted auto donate", "red");
+                    extension.getLogger().log(Messages.get("inventory.donate.aborted"), "red");
                     return;
                 }
                 donateFurni(false, entry.getKey(), "", entry.getValue());
                 counted += entry.getValue();
                 if (counted - lastReportedCount > 50) {
                     lastReportedCount = counted;
-                    extension.getLogger().log(String.format("Donated %d/%d floor items", counted, totalCount), "orange");
+                    extension.getLogger().log(Messages.get("inventory.donate.progress", counted, totalCount), "orange");
                 }
                 Utils.sleep(500);
             }
-            extension.getLogger().log("Donated all (donatable) floor items", "green");
+            extension.getLogger().log(Messages.get("inventory.donate.finished"), "green");
             state = AutoDonateState.NONE;
         }).start();
     }

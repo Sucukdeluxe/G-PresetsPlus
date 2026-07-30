@@ -1,5 +1,6 @@
 package game;
 
+import utils.Messages;
 import extension.logger.Logger;
 import gearth.extensions.IExtension;
 import gearth.extensions.parsers.HInventoryItem;
@@ -28,8 +29,19 @@ public class Inventory {
     private Map<Integer, Map<Integer, HInventoryItem>> wallItemsByType = new HashMap<>();
     private Map<Integer, Map<Integer, HInventoryItem>> floorItemsByType = new HashMap<>();
 
+    private static final int NO_ANSWER_WARN_MS = 8000;
+    private static final long BLOCK_MAX_MS = 30000;
+
     private InventoryState state = InventoryState.UNAVAILABLE;
     private volatile boolean virtualRequest = false;
+    private volatile long lastRequestAt = 0;
+    private volatile long loadedAt = 0;
+
+    private static int chunkLogStep(int total) {
+        if (total <= 20) return 5;
+        if (total <= 100) return 10;
+        return 25;
+    }
 
     public Inventory(IExtension extension, Logger logger, Callback onInventoryStateChange) {
         this.extension = extension;
@@ -47,6 +59,10 @@ public class Inventory {
         });
         extension.intercept(HMessage.Direction.TOCLIENT, "FurniListRemove", (m) ->
                 removeItem(m.getPacket().readInteger()));
+        extension.intercept(HMessage.Direction.TOCLIENT, "FurniListInvalidate", (m) -> {
+            logger.log(Messages.get("inventory.invalidated"), "orange");
+            virtualRequest = false;
+        });
     }
 
     public InventoryState getState() {
@@ -54,6 +70,10 @@ public class Inventory {
     }
 
     private void loadItems(HMessage hMessage) {
+        if (virtualRequest && System.currentTimeMillis() - lastRequestAt > BLOCK_MAX_MS) {
+            virtualRequest = false;
+            logger.log(Messages.get("inventory.block_released"), "orange");
+        }
         if (virtualRequest) {
             hMessage.setBlocked(true);
         }
@@ -66,24 +86,37 @@ public class Inventory {
 
         if (i == 0) {
             clear();
-            logger.log((itemPlacements.isEmpty() ? "Loading" : "Updating") + " inventory...", "blue");
+            logger.log(itemPlacements.isEmpty()
+                    ? Messages.get("inventory.loading")
+                    : Messages.get("inventory.updating"), "blue");
             buffer = new ArrayList<>();
             stateChanged = true;
             state = InventoryState.LOADING;
+        }
+
+        if (buffer == null) {
+            buffer = new ArrayList<>();
+            state = InventoryState.LOADING;
+            stateChanged = true;
         }
 
         inventoryLoadPacket.resetReadIndex();
         HInventoryItem[] items = HInventoryItem.parse(inventoryLoadPacket);
         buffer.addAll(Arrays.asList(items));
 
+        if (total > 1 && (i + 1) % chunkLogStep(total) == 0 && i != total - 1) {
+            logger.log(Messages.get("inventory.progress", i + 1, total, buffer.size()), "blue");
+        }
+
         boolean inventoryComplete = i == total - 1;
         if (inventoryComplete) {
             buffer.forEach(this::updateOrAddItem);
-            logger.log(String.format("Inventory loaded: found %d items.", itemPlacements.size()), "blue");
+            logger.log(Messages.get("inventory.loaded", itemPlacements.size()), "blue");
             buffer = null;
             stateChanged = true;
             virtualRequest = false;
             state = InventoryState.LOADED;
+            loadedAt = System.currentTimeMillis();
         }
 
         if (stateChanged) {
@@ -135,6 +168,7 @@ public class Inventory {
     }
 
     public void clear() {
+        virtualRequest = false;
         buffer = null;
         itemPlacements.clear();
         floorItemsByType.clear();
@@ -145,8 +179,36 @@ public class Inventory {
     }
 
     public void requestInventory() {
-        clear();
         virtualRequest = true;
+        logger.log(Messages.get("inventory.requested"), "blue");
+        onInventoryStateChange.call();
+
+        long requestedAt = System.currentTimeMillis();
+        lastRequestAt = requestedAt;
         extension.sendToServer(new HPacket("RequestFurniInventory", HMessage.Direction.TOSERVER));
+
+        Thread watchdog = new Thread(() -> {
+            try {
+                Thread.sleep(NO_ANSWER_WARN_MS);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if (lastRequestAt != requestedAt) {
+                return;
+            }
+            if (state == InventoryState.LOADING || loadedAt > requestedAt) {
+                return;
+            }
+            virtualRequest = false;
+            if (state == InventoryState.LOADED) {
+                logger.log(Messages.get("inventory.kept_cached", itemPlacements.size()), "orange");
+            } else {
+                state = InventoryState.UNAVAILABLE;
+                logger.log(Messages.get("inventory.no_answer", NO_ANSWER_WARN_MS / 1000), "red");
+                onInventoryStateChange.call();
+            }
+        }, "inventory-watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
     }
 }

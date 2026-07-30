@@ -54,6 +54,9 @@
 .g-light .green {
     -fx-fill: #73b504;
 }
+.g-light .grey {
+    -fx-fill: #7a7a7a;
+}
 
 
 .g-dark .orange {
@@ -77,6 +80,9 @@
 .g-dark .green {
     -fx-fill: #b9ff52;
 }
+.g-dark .grey {
+    -fx-fill: #a0a0a0;
+}
 
 
 
@@ -99,3 +105,126 @@
     -fx-pref-width: 11.5;
     -fx-padding: 1;
 }
+.combo-box,
+.text-field,
+.text-area,
+.choice-box {
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+}
+
+.combo-box:focused,
+.text-field:focused,
+.text-area:focused,
+.choice-box:focused,
+.check-box:focused,
+.radio-button:focused,
+.button:focused {
+    -fx-faint-focus-color: transparent;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+}
+
+.combo-box .list-cell,
+.combo-box-popup .list-view {
+    -fx-background-radius: 4px;
+}
+
+.panel-frame {
+    -fx-border-width: 1px;
+    -fx-border-style: solid;
+    -fx-border-radius: 5px;
+}
+
+.g-light .panel-frame {
+    -fx-border-color: #c8c8c8;
+}
+
+.g-dark .panel-frame {
+    -fx-border-color: #4a4a4a;
+}
+
+.dialog-root {
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+}
+
+.g-light .panel-frame,
+.g-light.dialog-root {
+    -fx-border-color: #c8c8c8;
+}
+
+.g-dark.dialog-root {
+    -fx-background-color: #2b2b2b;
+}
+
+.g-dark .panel-frame > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: #3a3a3a;
+}
+
+.panel-frame > .tab-header-area {
+    -fx-padding: 5 6 0 6;
+}
+
+.panel-frame > .tab-header-area > .headers-region > .tab {
+    -fx-padding: 5 16 5 16;
+    -fx-background-insets: 0 3 0 3;
+    -fx-background-radius: 4px 4px 0 0;
+}
+
+.combo-box > .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4 8 4 8;
+}
+
+.combo-box > .arrow-button {
+    -fx-background-radius: 0 4px 4px 0;
+    -fx-background-insets: 0;
+}
+
+.combo-box,
+.combo-box:focused,
+.combo-box:showing {
+    -fx-background-insets: 0;
+}
+
+.g-dark .panel-frame,
+.g-dark .panel-frame > .tab-content-area,
+.g-dark .panel-frame > .tab-header-area,
+.g-dark .panel-frame > .tab-header-area > .tab-header-background,
+.g-dark .panel-frame > .tab-header-area > .headers-region {
+    -fx-background-color: #2b2b2b;
+}
+
+.g-dark .panel-frame > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: #383838;
+}
+
+.g-dark .panel-frame > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: #4a4a4a;
+}
+
+.panel-frame > .tab-header-area > .headers-region > .tab:selected > .focus-indicator {
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+}
+
+.g-dark.dialog-root .label,
+.g-dark.dialog-root .check-box,
+.g-dark.dialog-root .radio-button {
+    -fx-text-fill: #efefef;
+}
+
+.g-dark.dialog-root .tab-pane,
+.g-dark.dialog-root .tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: #2b2b2b;
+}
+
+.g-light .status-text, .g-light .status-ok { -fx-text-fill: #73b504; }
+.g-dark  .status-text, .g-dark  .status-ok { -fx-text-fill: #b9ff52; }
+
+.g-light .status-busy { -fx-text-fill: #c07800; }
+.g-dark  .status-busy { -fx-text-fill: #ffc958; }
+
+.g-light .status-failed { -fx-text-fill: #d10000; }
+.g-dark  .status-failed { -fx-text-fill: #ff8d82; }

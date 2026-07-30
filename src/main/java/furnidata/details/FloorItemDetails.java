@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 public class FloorItemDetails extends FurniDetails {
     public final String customParams;
     public final int xDim, yDim, defaultDir, specialType, bcOfferId;
-    public final boolean canStandOn, canSitOn, canLayOn;
+    public final boolean canStandOn, canSitOn, canLayOn, canPutStuffOn;
+    public final double height;
     public final List<String> partColors;
 
     public FloorItemDetails(JSONObject jsonObject) {
@@ -28,6 +29,8 @@ public class FloorItemDetails extends FurniDetails {
         this.canStandOn = jsonObject.getBoolean("canstandon");
         this.canSitOn = jsonObject.getBoolean("cansiton");
         this.canLayOn = jsonObject.getBoolean("canlayon");
+        this.canPutStuffOn = jsonObject.optBoolean("canputstuffon", false);
+        this.height = jsonObject.optDouble("height", 0d);
 
         this.partColors = jsonObject.has("partcolors") ?
                 Collections.unmodifiableList(

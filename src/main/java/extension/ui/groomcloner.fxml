@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TabPane fx:id="mainTabs" prefHeight="430.0" prefWidth="1000.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.411" xmlns:fx="http://javafx.com/fxml/1" fx:controller="extension.GRoomCloner">
+  <tabs>
+    <Tab fx:id="cloneTab" text="Clone room">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
+               <children>
+                  <AnchorPane layoutX="10.0" layoutY="12.0" prefWidth="201.0" style="-fx-border-width: 1px; -fx-border-style: solid; -fx-border-color: lightgrey; -fx-border-radius: 5px;" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="12.0">
+                     <children>
+                        <GridPane gridLinesVisible="true" nodeOrientation="LEFT_TO_RIGHT" AnchorPane.bottomAnchor="76.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="14.0">
+                           <columnConstraints>
+                              <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                           </columnConstraints>
+                           <rowConstraints>
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                           </rowConstraints>
+                           <children>
+                              <Label fx:id="cndConnectedLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Connected to Habbo" />
+                              <Label fx:id="cndRoomLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Room detected" GridPane.rowIndex="1" />
+                              <Label fx:id="cndFurnidataLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Furnidata loaded" GridPane.rowIndex="2" />
+                              <Label fx:id="cndInventoryLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Inventory parsed" GridPane.rowIndex="3" />
+                              <Label fx:id="cndStackTileLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Stack tile found" GridPane.rowIndex="4" />
+                              <Label fx:id="cndPermissionsLbl" alignment="CENTER" contentDisplay="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" text="Required permissions" GridPane.rowIndex="5" />
+                           </children>
+                        </GridPane>
+                        <Button fx:id="loadInventoryBtn" mnemonicParsing="false" onAction="#loadInventoryClick" prefHeight="27.0" text="Load inventory" AnchorPane.bottomAnchor="41.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                        <Button fx:id="reloadRoomBtn" mnemonicParsing="false" onAction="#reloadRoomClick" prefHeight="27.0" text="Reload room" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                     </children>
+                  </AnchorPane>
+                  <BorderPane fx:id="logsBorderPane" style="-fx-border-color: lightgrey;" AnchorPane.bottomAnchor="12.0" AnchorPane.leftAnchor="221.0" AnchorPane.rightAnchor="246.0" AnchorPane.topAnchor="12.0">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </BorderPane>
+                  <AnchorPane prefWidth="225.0" style="-fx-border-width: 1px; -fx-border-style: solid; -fx-border-color: lightgrey; -fx-border-radius: 5px;" AnchorPane.bottomAnchor="12.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="12.0">
+                     <children>
+                        <Button fx:id="cloneBtn" mnemonicParsing="false" onAction="#copyRoomOnlyClick" prefHeight="38.0" text="Copy room" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="10.0" />
+                        <Button fx:id="cloneBuildBtn" mnemonicParsing="false" onAction="#cloneRoomClick" prefHeight="38.0" text="Copy room + build" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="54.0" />
+                        <Button fx:id="cancelCloneBtn" disable="true" mnemonicParsing="false" onAction="#cancelCloneClick" prefHeight="27.0" text="Cancel" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" AnchorPane.topAnchor="98.0" />
+                        <Label fx:id="nameSuffixLbl" layoutX="9.0" layoutY="136.0" text="Name suffix for the copy:" />
+                        <TextField fx:id="nameSuffix_txt" layoutY="153.0" prefHeight="25.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" />
+                        <CheckBox fx:id="copyWallItemsCbx" layoutX="9.0" layoutY="190.0" mnemonicParsing="false" selected="true" text="Include wall furni" />
+                        <CheckBox fx:id="workAnnexCbx" layoutX="9.0" layoutY="214.0" mnemonicParsing="false" selected="true" text="Temporary work area" />
+                        <Label fx:id="cloneStatusLbl" styleClass="status-text" text="Ready" wrapText="true" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="118.0" />
+                        <CheckBox fx:id="onTopCloneCbx" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" onAction="#alwaysOnTopCloneClick" text="Always on top" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="9.0" />
+                     </children>
+                  </AnchorPane>
+               </children>
+            </AnchorPane>
+      </content>
+    </Tab>
+    <Tab fx:id="presetsTab" text="Presets">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
+               <children>
+                  <Label fx:id="savedPresetsLbl" layoutX="14.0" layoutY="14.0" text="Saved presets (double-click to select):" />
+                  <ListView fx:id="presetListView" layoutX="14.0" layoutY="36.0" prefHeight="290.0" prefWidth="300.0" />
+                  <Button fx:id="renamePresetBtn" layoutX="14.0" layoutY="334.0" mnemonicParsing="false" onAction="#renamePresetClick" prefHeight="27.0" prefWidth="96.0" text="Rename" />
+                  <Button fx:id="editPresetBtn" layoutX="116.0" layoutY="334.0" mnemonicParsing="false" onAction="#editPresetClick" prefHeight="27.0" prefWidth="96.0" text="Edit" />
+                  <Button fx:id="deletePresetBtn" layoutX="218.0" layoutY="334.0" mnemonicParsing="false" onAction="#deletePresetClick" prefHeight="27.0" prefWidth="96.0" text="Delete" />
+                  <Button fx:id="availabilityBtn" layoutX="330.0" layoutY="36.0" mnemonicParsing="false" onAction="#availabilityBtnClick" prefHeight="25.0" prefWidth="190.0" text="Check availability" />
+                  <Button fx:id="selfDonateBtn" layoutX="330.0" layoutY="71.0" mnemonicParsing="false" onAction="#selfDonateBtnClick" prefHeight="25.0" prefWidth="190.0" text="Self-donate furni" visible="false" />
+                  <Button fx:id="reloadPresetsBtn" layoutX="330.0" layoutY="106.0" mnemonicParsing="false" onAction="#reloadPresetsClick" prefHeight="25.0" prefWidth="190.0" text="Reload presets" />
+                  <Button fx:id="openPresetsFolderBtn" layoutX="330.0" layoutY="141.0" mnemonicParsing="false" onAction="#openPresetsFolderClick" prefHeight="25.0" prefWidth="190.0" text="Open presets folder" />
+                  <Button fx:id="currentPresetBtn" layoutX="330.0" layoutY="176.0" mnemonicParsing="false" onAction="#openCurrentPresetClick" prefHeight="25.0" prefWidth="190.0" text="Open preset in editor" />
+                  <Button fx:id="clearWiredBtn" layoutX="330.0" layoutY="211.0" mnemonicParsing="false" onAction="#clearWiredClick" prefHeight="25.0" prefWidth="190.0" text="Clear wired cache" />
+                  <Button fx:id="buildPresetBtn" layoutX="540.0" layoutY="36.0" mnemonicParsing="false" onAction="#buildSelectedPresetClick" prefHeight="44.0" prefWidth="220.0" text="Build in this room" />
+                  <Label fx:id="buildPresetHintLbl" layoutX="540.0" layoutY="84.0" prefWidth="220.0" text="Selects the preset. Start the build in game with :ip (click) or :ip x,y." wrapText="true" />
+                  <Button fx:id="presetToNewRoomBtn" layoutX="540.0" layoutY="140.0" mnemonicParsing="false" onAction="#presetToNewRoomClick" prefHeight="44.0" prefWidth="220.0" text="Create room + build" />
+                  <Label fx:id="presetToNewRoomHintLbl" layoutX="540.0" layoutY="188.0" prefWidth="220.0" text="Creates a room large enough for the preset, enters it and builds the preset there." wrapText="true" />
+               </children>
+            </AnchorPane>
+      </content>
+    </Tab>
+    <Tab fx:id="settingsTab" text="Settings">
+      <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
+               <children>
+                  <Label fx:id="mainStackTileLbl" layoutX="14.0" layoutY="14.0" text="Main stack tile:" />
+                  <RadioButton layoutX="140.0" layoutY="14.0" mnemonicParsing="false" text="1x1">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="stacktile_tgl" />
+                     </toggleGroup></RadioButton>
+                  <RadioButton layoutX="192.0" layoutY="14.0" mnemonicParsing="false" selected="true" text="2x2" toggleGroup="$stacktile_tgl" />
+                  <RadioButton layoutX="244.0" layoutY="14.0" mnemonicParsing="false" text="4x4" toggleGroup="$stacktile_tgl" />
+                  <RadioButton layoutX="296.0" layoutY="14.0" mnemonicParsing="false" text="6x6" toggleGroup="$stacktile_tgl" />
+                  <RadioButton layoutX="348.0" layoutY="14.0" mnemonicParsing="false" text="8x8" toggleGroup="$stacktile_tgl" />
+
+                  <Label fx:id="itemSourceLbl" layoutX="14.0" layoutY="45.0" text="Item source:" />
+                  <RadioButton fx:id="onlyInvCbx" layoutX="140.0" layoutY="45.0" mnemonicParsing="false" selected="true" text="Only Inventory" userData="ONLY_INVENTORY">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="item_src_tgl" />
+                     </toggleGroup>
+                  </RadioButton>
+                  <RadioButton fx:id="preferInvCbx" layoutX="255.0" layoutY="45.0" mnemonicParsing="false" text="Prefer Inventory" toggleGroup="$item_src_tgl" userData="PREFER_INVENTORY" />
+                  <RadioButton fx:id="preferBcCbx" layoutX="380.0" layoutY="45.0" mnemonicParsing="false" text="Prefer BC" toggleGroup="$item_src_tgl" userData="PREFER_BC" />
+                  <RadioButton fx:id="onlyBcCbx" layoutX="470.0" layoutY="45.0" mnemonicParsing="false" text="Only BC" toggleGroup="$item_src_tgl" userData="ONLY_BC" />
+
+                  <Label fx:id="ratelimitLbl" layoutX="14.0" layoutY="78.0" text="Ratelimit:" />
+                  <Slider fx:id="ratelimiter" layoutX="140.0" layoutY="80.0" prefHeight="14.0" prefWidth="219.0" value="22.0" />
+
+                  <Label fx:id="languageLbl" layoutX="14.0" layoutY="111.0" text="Language:" />
+                  <RadioButton fx:id="langEn" layoutX="140.0" layoutY="111.0" mnemonicParsing="false" selected="true" text="English" userData="EN">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="lang_tgl" />
+                     </toggleGroup>
+                  </RadioButton>
+                  <RadioButton fx:id="langDe" layoutX="255.0" layoutY="111.0" mnemonicParsing="false" text="Deutsch" toggleGroup="$lang_tgl" userData="DE" />
+
+                  <Label fx:id="donateLabel" layoutX="14.0" layoutY="144.0" text="Self-donate:" visible="false" />
+                  <RadioButton fx:id="donateMissing" layoutX="140.0" layoutY="144.0" mnemonicParsing="false" selected="true" text="Only missing items" userData="MISSING_ITEMS" visible="false">
+                      <toggleGroup>
+                          <ToggleGroup fx:id="donate_tgl" />
+                      </toggleGroup>
+                  </RadioButton>
+                  <RadioButton fx:id="donateAll" layoutX="300.0" layoutY="144.0" mnemonicParsing="false" selected="false" text="All items in export" toggleGroup="$donate_tgl" userData="ALL_ITEMS" visible="false" />
+
+                  <Label fx:id="roomModelLbl" layoutX="14.0" layoutY="147.0" text="Room model of new rooms:" />
+                  <TextField fx:id="roomModel_txt" layoutX="220.0" layoutY="143.0" prefHeight="25.0" prefWidth="140.0" promptText="model_a" />
+                  <CheckBox fx:id="noExportWiredCbx" layoutX="14.0" layoutY="180.0" mnemonicParsing="false" text="Do not export wired" />
+                  <CheckBox fx:id="allowIncompleteBuildsCbx" layoutX="14.0" layoutY="205.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="300.0" text="Allow building without all furni" />
+                  <CheckBox fx:id="onTopCbx" layoutX="14.0" layoutY="230.0" mnemonicParsing="false" onAction="#alwaysOnTopClick" text="Always on top" />
+               </children></AnchorPane>
+      </content>
+    </Tab>
+      <Tab fx:id="presetConfigTab" text="Preset configuration">
+          <content>
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
+               <children>
+                  <AnchorPane layoutX="470.0" layoutY="14.0" prefHeight="244.0" prefWidth="254.0" style="-fx-border-color: #999; -fx-border-image-width: 1px; -fx-border-radius: 5px;">
+                     <children>
+                        <Button fx:id="updatePostconfigBtn" layoutX="20.0" layoutY="196.0" mnemonicParsing="false" onAction="#updatePostconfigClick" prefHeight="25.0" prefWidth="214.0" text="Update" />
+                        <TextField fx:id="furniNamePC_txt" layoutX="120.0" layoutY="21.0" prefHeight="25.0" prefWidth="114.0" promptText="furniname[x]" />
+                        <TextField fx:id="replacementIdPC_txt" layoutX="120.0" layoutY="55.0" prefHeight="25.0" prefWidth="114.0" promptText="123456789" />
+                        <Label fx:id="furniNameLbl" layoutX="14.0" layoutY="25.0" text="Furni name:" />
+                        <Label fx:id="existingFurniLbl" layoutX="14.0" layoutY="59.0" text="Existing furni:" />
+                        <Label fx:id="postconfigErrorLbl" layoutX="20.0" layoutY="171.0" prefWidth="214.0" textFill="#e12121" wrapText="true" />
+                     </children>
+                  </AnchorPane>
+                  <GridPane fx:id="pcgrid" layoutX="14.0" layoutY="14.0" prefHeight="245.0" prefWidth="440.0">
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                  </GridPane>
+               </children>
+              </AnchorPane>
+          </content>
+      </Tab>
+  </tabs>
+   <padding>
+      <Insets bottom="7.0" />
+   </padding>
+</TabPane>

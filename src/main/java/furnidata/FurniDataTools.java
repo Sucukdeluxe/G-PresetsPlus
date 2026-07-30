@@ -114,6 +114,26 @@ public class FurniDataTools {
     }
 
     public boolean isStackable(String furniName) {
-        return !UNSTACKABLE_FURNI.contains(furniName);
+        if (UNSTACKABLE_FURNI.contains(furniName)) {
+            return false;
+        }
+        return !isFlatFloorCovering(furniName);
+    }
+
+    public boolean isFlatFloorCovering(String furniName) {
+        if (furniName != null && furniName.startsWith("tile_stackmagic")) {
+            return true;
+        }
+        FloorItemDetails details = nameToFloorItems.get(furniName);
+        if (details == null) {
+            return false;
+        }
+        if (details.xDim <= 1 && details.yDim <= 1) {
+            return false;
+        }
+        return details.canPutStuffOn
+                && !details.canSitOn
+                && !details.canLayOn
+                && details.height < 0.01d;
     }
 }

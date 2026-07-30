@@ -1,6 +1,7 @@
 package extension.tools;
 
-import extension.GPresets;
+import utils.Messages;
+import extension.GRoomCloner;
 import extension.parsers.HWiredVariable;
 import extension.parsers.VariableInternalType;
 import extension.tools.presetconfig.PresetConfig;
@@ -44,6 +45,7 @@ public class GPresetExporter {
     private volatile String exportName = null;
 
     private volatile PresetExportState state = PresetExportState.NONE;
+    private volatile Consumer<Boolean> exportCompletion = null;
 
     private final Map<String, PresetWiredCondition> wiredConditionConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, PresetWiredEffect> wiredEffectConfigs = Collections.synchronizedMap(new HashMap<>());
@@ -57,9 +59,9 @@ public class GPresetExporter {
     private final Map<String, List<PresetWiredFurniBinding>> wiredFurniBindings = Collections.synchronizedMap(new HashMap<>());
 
 
-    private final GPresets extension;
+    private final GRoomCloner extension;
 
-    public GPresetExporter(GPresets extension) {
+    public GPresetExporter(GRoomCloner extension) {
         this.extension = extension;
 
         extension.intercept(HMessage.Direction.TOSERVER, "UpdateCondition", this::saveCondition);
@@ -132,24 +134,24 @@ public class GPresetExporter {
                 hMessage.setBlocked(true);
                 if (state != PresetExportState.NONE) {
                     reset();
-                    extension.sendVisualChatInfo("Aborted preset export");
+                    extension.sendVisualChatInfo(Messages.get("preset.export.aborted"));
                 }
             } else if(text.equals(":ep") || text.equals(":exportpreset") || text.equals(":ep all") || text.equals(":exportpreset all")) {
                 hMessage.setBlocked(true);
 
                 if (state != PresetExportState.NONE) {
-                    extension.sendVisualChatInfo("Already exporting preset.. finish up or abort first");
+                    extension.sendVisualChatInfo(Messages.get("preset.export.already_running"));
                 } else if (!isReady()) {
-                    extension.sendVisualChatInfo("Error: no room detected or furnidata not available");
+                    extension.sendVisualChatInfo(Messages.get("preset.export.error.not_ready"));
                 } else if (text.equals(":ep") || text.equals(":exportpreset")) {
                     state = PresetExportState.AWAITING_RECT1;
-                    extension.sendVisualChatInfo("Select the start of the rectangle");
+                    extension.sendVisualChatInfo(Messages.get("preset.export.select_rect_start"));
                 } else {
                     // export all
                     rectCorner1 = new HPoint(0,0 );
                     rectCorner2 = new HPoint(100, 100);
                     state = PresetExportState.AWAITING_NAME;
-                    extension.sendVisualChatInfo("Enter the name of the preset");
+                    extension.sendVisualChatInfo(Messages.get("preset.export.enter_name"));
                 }
             } else if (state == PresetExportState.AWAITING_NAME) {
                 hMessage.setBlocked(true);
@@ -184,7 +186,7 @@ public class GPresetExporter {
                 rectCorner1 = new HPoint(x, y);
 
                 state = PresetExportState.AWAITING_RECT2;
-                extension.sendVisualChatInfo("Select the end of the rectangle");
+                extension.sendVisualChatInfo(Messages.get("preset.export.select_rect_end"));
             }
             else if(state == PresetExportState.AWAITING_RECT2) {
                 hMessage.setBlocked(true);
@@ -193,7 +195,7 @@ public class GPresetExporter {
                 rectCorner2 = new HPoint(x, y);
 
                 state = PresetExportState.AWAITING_NAME;
-                extension.sendVisualChatInfo("Enter the name of the preset");
+                extension.sendVisualChatInfo(Messages.get("preset.export.enter_name"));
             }
         }
     }
@@ -288,6 +290,33 @@ public class GPresetExporter {
         rectCorner2 = null;
         exportName = null;
         state = PresetExportState.NONE;
+        completeExport(false);
+    }
+
+    public boolean startExportAll(String name, Consumer<Boolean> completion) {
+        synchronized (lock) {
+            if (state != PresetExportState.NONE) {
+                extension.getLogger().log(Messages.get("preset.export.already_running.log"), "red");
+                return false;
+            }
+            if (!isReady()) {
+                extension.getLogger().log(Messages.get("preset.export.error.not_ready.log"), "red");
+                return false;
+            }
+            this.exportCompletion = completion;
+            rectCorner1 = new HPoint(0, 0);
+            rectCorner2 = new HPoint(100, 100);
+            attemptExport(name, 0, 0, 101, 101);
+            return true;
+        }
+    }
+
+    private void completeExport(boolean success) {
+        Consumer<Boolean> completion = this.exportCompletion;
+        this.exportCompletion = null;
+        if (completion != null) {
+            completion.accept(success);
+        }
     }
 
     public synchronized List<Integer> unRegisteredWiredsInArea(int x, int y, int dimX, int dimY) {
@@ -482,12 +511,13 @@ public class GPresetExporter {
             PresetConfigUtils.savePreset(name, presetConfig);
             extension.updateInstalledPresets();
 
-            extension.sendVisualChatInfo(String.format(String.format("Exported \"%s\" successfully", name), name));
-            extension.getLogger().log(String.format("Exported preset \"%s\" successfully", name), "green");
+            extension.sendVisualChatInfo(String.format(Messages.get("preset.export.success", name), name));
+            extension.getLogger().log(Messages.get("preset.export.success.log", name), "green");
+            completeExport(true);
         }
         else {
-            extension.sendVisualChatInfo("ERROR - Couldn't export due to unsufficient resources");
-            extension.getLogger().log("Couldn't export due to unsufficient resources", "red");
+            extension.sendVisualChatInfo(Messages.get("preset.export.error.insufficient_resources"));
+            extension.getLogger().log(Messages.get("preset.export.error.insufficient_resources.log"), "red");
         }
         reset();
     }
@@ -515,14 +545,14 @@ public class GPresetExporter {
                     if (state == PresetExportState.FETCHING_UNKNOWN_CONFIGS) {
                         int remainingLeft = unRegisteredWiredsInArea(x, y, dimX, dimY).size();
                         if (remainingLeft <= originalRemaining / 2) {
-                            extension.sendVisualChatInfo(String.format("WARNING - Did not retrieve all wired. Retrying %d missing wired..", remainingLeft));
-                            extension.getLogger().log(String.format("Did not retrieve all wired. Retrying %d missing wired..", remainingLeft), "orange");
+                            extension.sendVisualChatInfo(Messages.get("wired.export.retry_missing", remainingLeft));
+                            extension.getLogger().log(Messages.get("wired.export.retry_missing.log", remainingLeft), "orange");
                             retry = true;
                         }
                         else {
                             // if it's still in this state, something failed..
-                            extension.sendVisualChatInfo("ERROR - Couldn't export due to missing wired configurations");
-                            extension.getLogger().log("Couldn't export due to missing wired configurations", "red");
+                            extension.sendVisualChatInfo(Messages.get("wired.export.error.missing_configs"));
+                            extension.getLogger().log(Messages.get("wired.export.error.missing_configs.log"), "red");
                             reset();
                         }
                     }
@@ -534,8 +564,8 @@ public class GPresetExporter {
         }
         catch (Exception e) {
             synchronized (lock) {
-                extension.sendVisualChatInfo("ERROR - Something went wrong while fetching configurations..");
-                extension.getLogger().log("Something went wrong while fetching configurations..", "red");
+                extension.sendVisualChatInfo(Messages.get("wired.export.error.fetch_failed"));
+                extension.getLogger().log(Messages.get("wired.export.error.fetch_failed.log"), "red");
                 reset();
             }
         }
@@ -566,7 +596,7 @@ public class GPresetExporter {
                     export(exportName, x1, y1, dimX, dimY);
                 }
                 else if (remaining % 10 == 0) {
-                    extension.getLogger().log(String.format("%d wired configurations left to retrieve..", remaining), "orange");
+                    extension.getLogger().log(Messages.get("wired.export.remaining", remaining), "orange");
                 }
             }
         }
@@ -670,7 +700,7 @@ public class GPresetExporter {
     private void openWired(HMessage hMessage) {
         if (state == PresetExportState.FETCHING_UNKNOWN_CONFIGS) {
             hMessage.setBlocked(true);
-            extension.sendVisualChatInfo("Do not open wired while the extension is fetching configurations");
+            extension.sendVisualChatInfo(Messages.get("wired.export.no_open_wired"));
         }
     }
 
@@ -684,7 +714,7 @@ public class GPresetExporter {
                 variablesMap = new HashMap<>();
                 extension.sendToServer(new HPacket("WiredGetAllVariablesDiffs", HMessage.Direction.TOSERVER, 0));
                 extension.sendVisualChatInfo(String.format(
-                        "Fetching additional %s wired configurations before exporting... do not alter the room",
+                        Messages.get("wired.export.fetching"),
                         unregisteredWired.size()
                 ));
                 new Thread(() -> requestWiredConfigsLoop(x, y, dimX, dimY)).start();
@@ -695,8 +725,8 @@ public class GPresetExporter {
         }
         else {
             reset();
-            extension.sendVisualChatInfo("ERROR - Couldn't export due to missing floorstate or furnidata");
-            extension.getLogger().log("Couldn't export due to missing floorstate or furnidata", "red");
+            extension.sendVisualChatInfo(Messages.get("preset.export.error.no_floorstate"));
+            extension.getLogger().log(Messages.get("preset.export.error.no_floorstate.log"), "red");
         }
     }
 

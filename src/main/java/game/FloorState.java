@@ -1,5 +1,6 @@
 package game;
 
+import utils.Messages;
 import extension.logger.Logger;
 import furnidata.FurniDataTools;
 import gearth.extensions.ExtensionBase;
@@ -80,7 +81,7 @@ public class FloorState {
             }
         }
 
-        logger.log("Parsed floorplan", "blue");
+        logger.log(Messages.get("capture.floorplan.parsed"), "blue");
     }
 
     private void roomEntryInfo(HMessage hMessage) {
@@ -136,7 +137,7 @@ public class FloorState {
             this.heightmap = heightmap;
         }
 
-        logger.log("Parsed heightmap", "blue");
+        logger.log(Messages.get("capture.heightmap.parsed"), "blue");
     }
     private void heightmapUpdate(HMessage hMessage) {
         if (heightmap != null) {
@@ -173,16 +174,32 @@ public class FloorState {
         }
 
         onFloorStateChange.call();
-        logger.log("Parsed floor items", "blue");
+        logger.log(Messages.get("capture.flooritems.parsed"), "blue");
     }
 
     private void onObjectRemove(HMessage hMessage) {
         if (inRoom()) {
-            HPacket packet = hMessage.getPacket();
-            int furniid = Integer.parseInt(packet.readString());
+            int furniid = readFurniId(hMessage.getPacket());
+            if (furniid < 0) {
+                return;
+            }
             removeObject(furniid);
             onFloorStateChange.call();
         }
+    }
+
+    private static int readFurniId(HPacket packet) {
+        packet.resetReadIndex();
+        try {
+            return Integer.parseInt(packet.readString().trim());
+        } catch (Throwable ignored) {
+        }
+        packet.resetReadIndex();
+        try {
+            return packet.readInteger();
+        } catch (Throwable ignored) {
+        }
+        return -1;
     }
     private void removeObject(int furniId) {
         synchronized (lock) {
@@ -365,12 +382,18 @@ public class FloorState {
 
     private void onDataUpdate(HMessage hMessage) {
         HPacket packet = hMessage.getPacket();
-        onDataUpdate(hMessage.getPacket(), Integer.parseInt(packet.readString()));
+        int furniId = readFurniId(packet);
+        if (furniId < 0) {
+            return;
+        }
+        onDataUpdate(packet, furniId);
     }
 
     public void requestRoom(ExtensionBase ext) {
         latestRequestTimestamp = System.currentTimeMillis();
-        ext.sendToServer(new HPacket("GetHeightMap", HMessage.Direction.TOSERVER));
+        if (!ext.sendToServer(new HPacket("GetHeightMap", HMessage.Direction.TOSERVER))) {
+            ext.sendToServer(new HPacket("GetRoomEntryTile", HMessage.Direction.TOSERVER));
+        }
     }
 
     public HFloorItem furniFromId(int id) {

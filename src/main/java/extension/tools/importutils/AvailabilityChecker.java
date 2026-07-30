@@ -1,5 +1,6 @@
 package extension.tools.importutils;
 
+import utils.Messages;
 import extension.logger.Logger;
 import extension.tools.postconfig.ItemSource;
 import furnidata.FurniDataTools;
@@ -86,19 +87,19 @@ public class AvailabilityChecker {
                     .distinct()
                     .collect(Collectors.toList());
 
-            logger.log("Required furniture: ", "black");
+            logger.log(Messages.get("inventory.availability.header"), "black");
             for (String className : allItems) {
                 boolean isMissing = missing.containsKey(className) && missing.get(className) > 0;
                 int totalNeeded = (int)(furniDrops.stream().filter(i -> furniDataTools.getFloorItemName(i.getTypeId()).equals(className)).count());
                 int available = isMissing ? totalNeeded - missing.get(className) : totalNeeded;
 
-                logger.logNoNewline(String.format("* %s ", furniDataTools.getFloorItemDetails(className).name), "black");
-                logger.log(String.format("(%d/%d)", available, totalNeeded), isMissing ? "red" : "green");
+                logger.logNoNewline(Messages.get("inventory.availability.item.name", furniDataTools.getFloorItemDetails(className).name), "black");
+                logger.log(Messages.get("inventory.availability.item.count", available, totalNeeded), isMissing ? "red" : "green");
             }
 
         }
         else {
-            logger.log("Availability check failed, check if everything is loaded", "red");
+            logger.log(Messages.get("inventory.availability.failed"), "red");
         }
     }
 
