@@ -60,7 +60,7 @@ public class Inventory {
         extension.intercept(HMessage.Direction.TOCLIENT, "FurniListRemove", (m) ->
                 removeItem(m.getPacket().readInteger()));
         extension.intercept(HMessage.Direction.TOCLIENT, "FurniListInvalidate", (m) -> {
-            logger.log(Messages.get("inventory.invalidated"), "orange");
+            logger.logKey("inventory.invalidated", "orange");
             virtualRequest = false;
         });
     }
@@ -72,7 +72,7 @@ public class Inventory {
     private void loadItems(HMessage hMessage) {
         if (virtualRequest && System.currentTimeMillis() - lastRequestAt > BLOCK_MAX_MS) {
             virtualRequest = false;
-            logger.log(Messages.get("inventory.block_released"), "orange");
+            logger.logKey("inventory.block_released", "orange");
         }
         if (virtualRequest) {
             hMessage.setBlocked(true);
@@ -105,13 +105,13 @@ public class Inventory {
         buffer.addAll(Arrays.asList(items));
 
         if (total > 1 && (i + 1) % chunkLogStep(total) == 0 && i != total - 1) {
-            logger.log(Messages.get("inventory.progress", i + 1, total, buffer.size()), "blue");
+            logger.logKey("inventory.progress", "blue", i + 1, total, buffer.size());
         }
 
         boolean inventoryComplete = i == total - 1;
         if (inventoryComplete) {
             buffer.forEach(this::updateOrAddItem);
-            logger.log(Messages.get("inventory.loaded", itemPlacements.size()), "blue");
+            logger.logKey("inventory.loaded", "blue", itemPlacements.size());
             buffer = null;
             stateChanged = true;
             virtualRequest = false;
@@ -180,7 +180,7 @@ public class Inventory {
 
     public void requestInventory() {
         virtualRequest = true;
-        logger.log(Messages.get("inventory.requested"), "blue");
+        logger.logKey("inventory.requested", "blue");
         onInventoryStateChange.call();
 
         long requestedAt = System.currentTimeMillis();
@@ -201,10 +201,10 @@ public class Inventory {
             }
             virtualRequest = false;
             if (state == InventoryState.LOADED) {
-                logger.log(Messages.get("inventory.kept_cached", itemPlacements.size()), "orange");
+                logger.logKey("inventory.kept_cached", "orange", itemPlacements.size());
             } else {
                 state = InventoryState.UNAVAILABLE;
-                logger.log(Messages.get("inventory.no_answer", NO_ANSWER_WARN_MS / 1000), "red");
+                logger.logKey("inventory.no_answer", "red", NO_ANSWER_WARN_MS / 1000);
                 onInventoryStateChange.call();
             }
         }, "inventory-watchdog");

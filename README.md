@@ -15,7 +15,7 @@ It merges two existing extensions: [G-Presets](https://github.com/sirjonasxx/G-P
 - Presets are named after the room; a second copy of the same room becomes `Room (1)`, then `Room (2)`.
 - Smaller stack tiles are placed alongside the configured one, so furni also fit into gaps the main tile cannot reach. The 1x1 goes on top of the 2x2.
 - Rename and delete presets from inside the extension; both files of a preset (`.json` and `.roomJson`) are always handled together.
-- English and German, switchable at runtime in the Settings tab.
+- English and German, switchable at runtime in the Settings tab - the console log is rewritten in the new language, including lines already printed.
 - Chat commands from G-Presets still work: `:ep [all]`, `:ip [x,y]`, `:abort`.
 
 ![Preset editor](docs/preset-editor.png)
@@ -41,6 +41,8 @@ Annex 4x4 at 18,1 | door 18,1 | stack tile 2x2 at 18,2 | free space 19,1 | plan 
 ...
 Annex removed, door back at 17,3 dir 2 - the room now matches the original
 ```
+
+The switch sits in the Settings tab and only applies when a room is **created** - by *Copy room + build* or *Create room + build*. *Build preset here* builds into the room you are already standing in and uses G-Presets' own search for a stack tile and free space there.
 
 Turn it off if the target room is empty and large enough anyway; the build then looks for space inside the room.
 

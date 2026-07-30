@@ -5,6 +5,7 @@ import javafx.scene.layout.BorderPane;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.StyleClassedTextArea;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
+import utils.Messages;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,14 +14,32 @@ import java.util.List;
 
 public class Logger {
 
+    private static class Entry {
+        final String key;
+        final Object[] args;
+        final String literal;
+        final String className;
+
+        Entry(String key, Object[] args, String literal, String className) {
+            this.key = key;
+            this.args = args;
+            this.literal = literal;
+            this.className = className;
+        }
+
+        String render() {
+            return key == null ? literal : Messages.get(key, args) + "\n";
+        }
+    }
+
     private StyleClassedTextArea area;
     private volatile boolean initialized = false;
     private final List<Element> appendOnLoad = new ArrayList<>();
+    private final List<Entry> history = new ArrayList<>();
 
     public void initialize(BorderPane borderPane) {
         area = new StyleClassedTextArea();
         area.getStyleClass().add("themed-background");
-//        area.setWrapText(true);
         area.setEditable(false);
 
         VirtualizedScrollPane<StyleClassedTextArea> vsPane = new VirtualizedScrollPane<>(area);
@@ -42,19 +61,15 @@ public class Logger {
 
             for (Element element : elements) {
                 sb.append(element.text);
-
                 styleSpansBuilder.add(Collections.singleton(element.className), element.text.length());
             }
 
             int oldLen = area.getLength();
             area.appendText(sb.toString());
-//            System.out.println(sb.toString());
             area.setStyleSpans(oldLen, styleSpansBuilder.create());
 
-//            if (autoScroll) {
             area.moveTo(area.getLength());
             area.requestFollowCaret();
-//            }
         });
     }
 
@@ -62,35 +77,63 @@ public class Logger {
         logNoNewline(s + "\n", className);
     }
 
-    public void logNoNewline(String s, String className) {
-        s = cleanTextContent(s);
+    public void logKey(String key, String className, Object... args) {
+        write(new Entry(key, args, null, className.toLowerCase()));
+    }
 
+    public void logNoNewline(String s, String className) {
+        write(new Entry(null, null, s, className.toLowerCase()));
+    }
+
+    private void write(Entry entry) {
         List<Element> elements = new ArrayList<>();
-        elements.add(new Element(s, className.toLowerCase()));
+        elements.add(new Element(cleanTextContent(entry.render()), entry.className));
 
         synchronized (appendOnLoad) {
+            history.add(entry);
             if (initialized) {
                 appendLog(elements);
-            }
-            else {
+            } else {
                 appendOnLoad.addAll(elements);
             }
         }
     }
 
-    private static String cleanTextContent(String text)
-    {
-//        // strips off all non-ASCII characters
-//        text = text.replaceAll("[^\\x00-\\x7F]", "");
-//
-//        // erases all the ASCII control characters
-        text = text.replaceAll("[\\p{Cntrl}&&[^\n\t]]", "");
+    public void retranslate() {
+        List<Entry> snapshot;
+        synchronized (appendOnLoad) {
+            if (history.isEmpty()) {
+                return;
+            }
+            snapshot = new ArrayList<>(history);
+            if (!initialized) {
+                appendOnLoad.clear();
+                for (Entry entry : snapshot) {
+                    appendOnLoad.add(new Element(cleanTextContent(entry.render()), entry.className));
+                }
+                return;
+            }
+        }
 
-        // removes non-printable characters from Unicode
-//        text = text.replaceAll("\\p{C}", "");
+        Platform.runLater(() -> {
+            StringBuilder sb = new StringBuilder();
+            StyleSpansBuilder<Collection<String>> styleSpansBuilder = new StyleSpansBuilder<>(0);
+            for (Entry entry : snapshot) {
+                String text = cleanTextContent(entry.render());
+                sb.append(text);
+                styleSpansBuilder.add(Collections.singleton(entry.className), text.length());
+            }
 
-//        return text.trim();
-        return text;
+            area.replaceText(sb.toString());
+            if (sb.length() > 0) {
+                area.setStyleSpans(0, styleSpansBuilder.create());
+            }
+            area.moveTo(area.getLength());
+            area.requestFollowCaret();
+        });
     }
 
+    private static String cleanTextContent(String text) {
+        return text.replaceAll("[\\p{Cntrl}&&[^\n\t]]", "");
+    }
 }

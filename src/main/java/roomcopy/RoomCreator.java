@@ -35,16 +35,16 @@ public class RoomCreator {
         executor.register(answer);
 
         if (!executor.sendToServer("CanCreateRoom")) {
-            logger.log(Messages.get("room.quota.header_unresolvable"), "orange");
+            logger.logKey("room.quota.header_unresolvable", "orange");
             return;
         }
 
         HPacket response = executor.awaitPacket(answer);
         if (response == null) {
-            logger.log(Messages.get("room.quota.no_response"), "orange");
+            logger.logKey("room.quota.no_response", "orange");
             return;
         }
-        logger.log(Messages.get("room.quota.response", response.toExpression()), "blue");
+        logger.logKey("room.quota.response", "blue", response.toExpression());
     }
 
     public CreatedRoom createRoom(String name, String description, String model,
@@ -55,12 +55,11 @@ public class RoomCreator {
     public CreatedRoom createRoom(String name, String description, String model,
                                   int category, int maxUsers, int tradeMode, int sourceRoomId) {
         if (!executor.isKnownName(HMessage.Direction.TOSERVER, "CreateFlat")) {
-            logger.log(Messages.get("room.create.header_unresolvable"), "red");
+            logger.logKey("room.create.header_unresolvable", "red");
             return null;
         }
 
-        logger.log(Messages.get("room.create.started",
-                name, model, category, maxUsers, tradeMode), "blue");
+        logger.logKey("room.create.started", "blue", name, model, category, maxUsers, tradeMode);
 
 
         for (int attempt = 1; attempt <= CREATE_ATTEMPTS; attempt++) {
@@ -75,7 +74,7 @@ public class RoomCreator {
             executor.register(created, entered);
 
             if (!executor.sendToServer("CreateFlat", name, description, model, category, maxUsers, tradeMode)) {
-                logger.log(Messages.get("room.create.send_failed"), "red");
+                logger.logKey("room.create.send_failed", "red");
                 return null;
             }
 
@@ -87,7 +86,7 @@ public class RoomCreator {
                 HPacket entry = entered.getPacket();
                 entry.resetReadIndex();
                 int newId = entry.readInteger();
-                logger.log(Messages.get("room.create.detected_via_entry", newId), "orange");
+                logger.logKey("room.create.detected_via_entry", "orange", newId);
                 return new CreatedRoom(newId, null);
             }
 
@@ -95,26 +94,23 @@ public class RoomCreator {
                 logDiagnostics(name, description, model, category, maxUsers, tradeMode);
             }
             if (attempt < CREATE_ATTEMPTS) {
-                logger.log(Messages.get("room.create.throttled_retry",
-                        attempt, CREATE_ATTEMPTS, CREATE_RETRY_WAIT_MS / 1000), "orange");
+                logger.logKey("room.create.throttled_retry", "orange", attempt, CREATE_ATTEMPTS, CREATE_RETRY_WAIT_MS / 1000);
                 Utils.sleep(CREATE_RETRY_WAIT_MS);
             }
         }
 
-        logger.log(Messages.get("room.create.no_confirmation"), "red");
+        logger.logKey("room.create.no_confirmation", "red");
         return null;
     }
 
     private void logDiagnostics(String name, String description, String model,
                                 int category, int maxUsers, int tradeMode) {
-        logger.log(Messages.get("room.create.header_info",
-                executor.describeHeader(HMessage.Direction.TOSERVER, "CreateFlat")), "grey");
-        logger.log(Messages.get("room.create.header_info",
-                executor.describeHeader(HMessage.Direction.TOCLIENT, "FlatCreated")), "grey");
+        logger.logKey("room.create.header_info", "grey", executor.describeHeader(HMessage.Direction.TOSERVER, "CreateFlat"));
+        logger.logKey("room.create.header_info", "grey", executor.describeHeader(HMessage.Direction.TOCLIENT, "FlatCreated"));
         HPacket outgoing = new HPacket("CreateFlat", HMessage.Direction.TOSERVER,
                 name, description, model, category, maxUsers, tradeMode);
-        logger.log(Messages.get("room.create.outgoing_packet", outgoing.toExpression()), "grey");
-        logger.log(Messages.get("room.create.outgoing_bytes", hex(outgoing)), "grey");
+        logger.logKey("room.create.outgoing_packet", "grey", outgoing.toExpression());
+        logger.logKey("room.create.outgoing_bytes", "grey", hex(outgoing));
     }
 
     private static String hex(HPacket packet) {
@@ -133,7 +129,7 @@ public class RoomCreator {
         try {
             roomId = packet.readInteger();
         } catch (Throwable t) {
-            logger.log(Messages.get("room.create.read_failed", t), "red");
+            logger.logKey("room.create.read_failed", "red", t);
             return null;
         }
 
@@ -144,22 +140,21 @@ public class RoomCreator {
         }
 
         if (roomId <= 0) {
-            logger.log(Messages.get("room.create.implausible_id", roomId), "red");
+            logger.logKey("room.create.implausible_id", "red", roomId);
             return null;
         }
 
         if (reportedName != null && !reportedName.equals(expectedName)) {
-            logger.log(Messages.get("room.create.name_mismatch",
-                    reportedName, expectedName, roomId), "orange");
+            logger.logKey("room.create.name_mismatch", "orange", reportedName, expectedName, roomId);
         }
 
-        logger.log(Messages.get("room.create.new_id", roomId), "green");
+        logger.logKey("room.create.new_id", "green", roomId);
         return new CreatedRoom(roomId, reportedName);
     }
 
     public boolean enterRoom(int roomId, String password) {
         if (!executor.isKnownName(HMessage.Direction.TOSERVER, "OpenFlatConnection")) {
-            logger.log(Messages.get("room.enter.header_unresolvable"), "red");
+            logger.logKey("room.enter.header_unresolvable", "red");
             return false;
         }
 
@@ -174,22 +169,22 @@ public class RoomCreator {
         executor.clearRoomPacketCache();
 
         if (!executor.sendToServer("OpenFlatConnection", roomId, password == null ? "" : password, -1)) {
-            logger.log(Messages.get("room.enter.send_failed"), "red");
+            logger.logKey("room.enter.send_failed", "red");
             return false;
         }
 
         executor.awaitPacketList(roomReady, floorPlan, objects);
 
         if (roomReady.getPacket() == null) {
-            logger.log(Messages.get("room.enter.no_room_ready"), "red");
+            logger.logKey("room.enter.no_room_ready", "red");
             return false;
         }
         if (floorPlan.getPacket() == null || objects.getPacket() == null) {
-            logger.log(Messages.get("room.enter.packets_missing"), "orange");
+            logger.logKey("room.enter.packets_missing", "orange");
             return false;
         }
 
-        logger.log(Messages.get("room.enter.success"), "green");
+        logger.logKey("room.enter.success", "green");
         return true;
     }
 }

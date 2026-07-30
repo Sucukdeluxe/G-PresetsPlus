@@ -26,7 +26,7 @@ class MessageTable {
                 "Der Server hat das Inventar nicht erneut geschickt - er sendet die volle Liste nur einmal pro Session. Behalte die %d bereits gelesenen Objekte");
         Messages.put("inventory.invalidated",
                 "The server marked the inventory as outdated - press \"Load inventory\" to read it again",
-                "Der Server hat das Inventar als veraltet markiert - druecke \"Inventar laden\", um es neu zu lesen");
+                "Der Server hat das Inventar als veraltet markiert - dr\u00fccke \"Inventar laden\", um es neu zu lesen");
         Messages.put("ui.button.reloadroom",
                 "Reload room",
                 "Raum neu laden");
@@ -47,16 +47,16 @@ class MessageTable {
                 "Lege den Raum zuerst als \"%s\" an - der echte Name \"%s\" kommt danach mit den Raum-Settings");
         Messages.put("preset.newroom.roomname",
                 "The new room is called \"%s\"",
-                "Der neue Raum heisst \"%s\"");
+                "Der neue Raum hei\u00dft \"%s\"");
         Messages.put("preset.newroom.saved_plan",
                 "Using the saved floor plan of the original room (%sx%s, %s tiles, door %s,%s)",
-                "Benutze den gespeicherten Floorplan des Originalraums (%sx%s, %s Kacheln, Tuer %s,%s)");
+                "Benutze den gespeicherten Floorplan des Originalraums (%sx%s, %s Kacheln, T\u00fcr %s,%s)");
         Messages.put("preset.newroom.generated_plan",
                 "No room snapshot saved for this preset - using a generated %sx%s rectangle",
                 "Kein Raum-Snapshot zu diesem Preset gespeichert - benutze ein generiertes %sx%s-Rechteck");
         Messages.put("preset.newroom.plan_too_small",
                 "The preset needs %sx%s but the saved plan is only %sx%s - furni outside it will not be placed",
-                "Das Preset braucht %sx%s, der gespeicherte Plan ist aber nur %sx%s - Moebel ausserhalb werden nicht gesetzt");
+                "Das Preset braucht %sx%s, der gespeicherte Plan ist aber nur %sx%s - M\u00f6bel au\u00dferhalb werden nicht gesetzt");
         Messages.put("preset.newroom.snapshot_unreadable",
                 "Room snapshot \"%s\" could not be read (%s) - using a generated rectangle",
                 "Raum-Snapshot \"%s\" nicht lesbar (%s) - benutze ein generiertes Rechteck");
@@ -140,7 +140,7 @@ class MessageTable {
                 "Handel mit Rechten (1)");
         Messages.put("preset.editor.trade.2",
                 "Trading for everyone (2)",
-                "Handel fuer alle (2)");
+                "Handel f\u00fcr alle (2)");
         Messages.put("preset.editor.tag1",
                 "Tag 1",
                 "Tag 1");
@@ -152,7 +152,7 @@ class MessageTable {
                 "Durch Nutzer hindurchlaufen erlauben");
         Messages.put("preset.editor.unavailable",
                 "Tags are carried by the packet, but the clone always sent zero of them - set here they are transferred. Deleting a room is a separate packet and is not part of this editor.",
-                "Tags traegt das Paket mit, der Klon hat aber immer null gesendet - hier gesetzt werden sie uebertragen. Raum loeschen ist ein eigenes Paket und gehoert nicht in diesen Editor.");
+                "Tags tr\u00e4gt das Paket mit, der Klon hat aber immer null gesendet - hier gesetzt werden sie \u00fcbertragen. Raum l\u00f6schen ist ein eigenes Paket und geh\u00f6rt nicht in diesen Editor.");
         Messages.put("preset.editor.access",
                 "Access to this room",
                 "Zugang zu diesem Raum");
@@ -161,7 +161,7 @@ class MessageTable {
                 "Offen - jeder kann rein");
         Messages.put("preset.editor.door.1",
                 "Visitors have to ring the doorbell",
-                "Besucher muessen klingeln");
+                "Besucher m\u00fcssen klingeln");
         Messages.put("preset.editor.door.2",
                 "Password is required",
                 "Passwort erforderlich");
@@ -173,10 +173,10 @@ class MessageTable {
                 "Passwort");
         Messages.put("preset.editor.password_note",
                 "The room password is not part of any packet the extension can read, so a clone can never carry it over. Set it here and it is stored in the preset file as plain text and sent on the next build.",
-                "Das Raum-Passwort steht in keinem Paket, das die Extension lesen kann - ein Klon kann es also nie mitnehmen. Hier gesetzt landet es im Klartext in der Preset-Datei und wird beim naechsten Aufbau mitgesendet.");
+                "Das Raum-Passwort steht in keinem Paket, das die Extension lesen kann - ein Klon kann es also nie mitnehmen. Hier gesetzt landet es im Klartext in der Preset-Datei und wird beim n\u00e4chsten Aufbau mitgesendet.");
         Messages.put("preset.editor.error.password",
                 "Password mode needs a password - without one the room would be unreachable",
-                "Der Passwortmodus braucht ein Passwort - ohne waere der Raum nicht betretbar");
+                "Der Passwortmodus braucht ein Passwort - ohne w\u00e4re der Raum nicht betretbar");
         Messages.put("preset.editor.pet_settings",
                 "Pet settings",
                 "Haustiere");
@@ -185,13 +185,13 @@ class MessageTable {
                 "Haustiere erlauben");
         Messages.put("preset.editor.pets_eat",
                 "Allow other pets to eat food",
-                "Fremde Haustiere duerfen fressen");
+                "Fremde Haustiere d\u00fcrfen fressen");
         Messages.put("preset.editor.pets_mute",
                 "Mute all pets",
                 "Alle Haustiere stummschalten");
         Messages.put("preset.editor.hidewalls",
                 "Hide room walls (HC only)",
-                "Raumwaende ausblenden (nur HC)");
+                "Raumw\u00e4nde ausblenden (nur HC)");
         Messages.put("preset.editor.wallthickness",
                 "Wall thickness",
                 "Wanddicke");
@@ -200,10 +200,10 @@ class MessageTable {
                 "Bodendicke");
         Messages.put("preset.editor.thickness_n.-2",
                 "Thinnest (-2)",
-                "Duennste (-2)");
+                "D\u00fcnnste (-2)");
         Messages.put("preset.editor.thickness_n.-1",
                 "Thin (-1)",
-                "Duenn (-1)");
+                "D\u00fcnn (-1)");
         Messages.put("preset.editor.thickness_n.0",
                 "Normal (0)",
                 "Normal (0)");
@@ -212,7 +212,7 @@ class MessageTable {
                 "Dick (1)");
         Messages.put("preset.editor.leaveondoor",
                 "Leave room when walking on the door tile",
-                "Raum verlassen beim Betreten der Tuerkachel");
+                "Raum verlassen beim Betreten der T\u00fcrkachel");
         Messages.put("preset.editor.sleep",
                 "Sleep after timeout",
                 "Nach Zeit einschlafen");
@@ -263,67 +263,67 @@ class MessageTable {
                 "Der Raumname darf nicht leer sein");
         Messages.put("preset.editor.error.seconds",
                 "The timeouts must be whole, non-negative numbers",
-                "Die Zeiten muessen ganze, nicht negative Zahlen sein");
+                "Die Zeiten m\u00fcssen ganze, nicht negative Zahlen sein");
         Messages.put("preset.editor.error.category",
                 "The category must be a non-negative number",
                 "Die Kategorie muss eine nicht negative Zahl sein");
         Messages.put("ui.presets.edit", "Edit", "Bearbeiten");
         Messages.put("ui.presets.rename", "Rename", "Umbenennen");
-        Messages.put("ui.presets.delete", "Delete", "Loeschen");
+        Messages.put("ui.presets.delete", "Delete", "L\u00f6schen");
         Messages.put("preset.rename.title", "Rename preset", "Preset umbenennen");
         Messages.put("preset.rename.header", "Current name: %s", "Aktueller Name: %s");
         Messages.put("preset.rename.label", "New name:", "Neuer Name:");
         Messages.put("preset.rename.invalid", "\"%s\" is not a usable file name", "\"%s\" ist kein brauchbarer Dateiname");
         Messages.put("preset.rename.exists", "A preset named \"%s\" already exists", "Ein Preset namens \"%s\" existiert schon");
         Messages.put("preset.rename.done", "Preset renamed: \"%s\" -> \"%s\"", "Preset umbenannt: \"%s\" -> \"%s\"");
-        Messages.put("preset.rename.failed", "Could not rename \"%s\"", "\"%s\" liess sich nicht umbenennen");
-        Messages.put("preset.delete.title", "Delete preset", "Preset loeschen");
-        Messages.put("preset.delete.header", "Delete \"%s\"?", "\"%s\" loeschen?");
+        Messages.put("preset.rename.failed", "Could not rename \"%s\"", "\"%s\" lie\u00df sich nicht umbenennen");
+        Messages.put("preset.delete.title", "Delete preset", "Preset l\u00f6schen");
+        Messages.put("preset.delete.header", "Delete \"%s\"?", "\"%s\" l\u00f6schen?");
         Messages.put("preset.delete.body", "The preset file and its room snapshot are deleted from disk. This cannot be undone.",
-                "Die Preset-Datei und ihr Raum-Snapshot werden von der Platte geloescht. Das laesst sich nicht widerrufen.");
-        Messages.put("preset.delete.done", "Preset \"%s\" deleted", "Preset \"%s\" geloescht");
-        Messages.put("preset.delete.failed", "Could not delete \"%s\"", "\"%s\" liess sich nicht loeschen");
+                "Die Preset-Datei und ihr Raum-Snapshot werden von der Platte gel\u00f6scht. Das l\u00e4sst sich nicht widerrufen.");
+        Messages.put("preset.delete.done", "Preset \"%s\" deleted", "Preset \"%s\" gel\u00f6scht");
+        Messages.put("preset.delete.failed", "Could not delete \"%s\"", "\"%s\" lie\u00df sich nicht l\u00f6schen");
         Messages.put("settings.full_read",
                 "Full room settings read (flood %s, idle %s/%s, rights %s/%s/%s)",
-                "Vollstaendige Raum-Settings gelesen (Flood %s, Idle %s/%s, Rechte %s/%s/%s)");
+                "Vollst\u00e4ndige Raum-Settings gelesen (Flood %s, Idle %s/%s, Rechte %s/%s/%s)");
         Messages.put("settings.name_fallback",
                 "The name \"%s\" did not take. Trying the plain room name \"%s\" without the suffix",
                 "Der Name \"%s\" ist nicht angekommen. Versuche den reinen Raumnamen \"%s\" ohne Zusatz");
         Messages.put("settings.name_fallback_ok",
                 "The room is called \"%s\" now - without the suffix, but named",
-                "Der Raum heisst jetzt \"%s\" - ohne Zusatz, aber benannt");
+                "Der Raum hei\u00dft jetzt \"%s\" - ohne Zusatz, aber benannt");
         Messages.put("settings.name_fallback_failed",
                 "Even the plain room name did not take - the room keeps its creation name",
-                "Auch der reine Raumname ist nicht angekommen - der Raum behaelt seinen Erstell-Namen");
+                "Auch der reine Raumname ist nicht angekommen - der Raum beh\u00e4lt seinen Erstell-Namen");
         Messages.put("preset.name.numbered",
                 "A preset called \"%s\" already exists, saving as \"%s\"",
                 "Ein Preset namens \"%s\" gibt es schon, speichere als \"%s\"");
         Messages.put("settings.verify.all_ok",
                 "Verified by readback: \"%s\" - every transferred field matches the source",
-                "Per Rueckleseprobe bestaetigt: \"%s\" - alle uebertragenen Felder stimmen mit der Quelle");
+                "Per R\u00fcckleseprobe best\u00e4tigt: \"%s\" - alle \u00fcbertragenen Felder stimmen mit der Quelle");
         Messages.put("settings.verify.diff_count",
                 "READBACK: %s field(s) did not survive - the server holds different values:",
-                "RUECKLESEPROBE: %s Feld(er) haben nicht ueberlebt - der Server haelt andere Werte:");
+                "R\u00dcCKLESEPROBE: %s Feld(er) haben nicht \u00fcberlebt - der Server h\u00e4lt andere Werte:");
         Messages.put("settings.verify.field", "%s: expected %s, server reports %s",
                 "%s: erwartet %s, Server meldet %s");
         Messages.put("settings.verify.ok", "Verified by readback: the room is now called \"%s\"",
-                "Per Rueckleseprobe bestaetigt: der Raum heisst jetzt \"%s\"");
+                "Per R\u00fcckleseprobe best\u00e4tigt: der Raum hei\u00dft jetzt \"%s\"");
         Messages.put("settings.verify.mismatch",
                 "READBACK MISMATCH: the server reports \"%s\", expected was \"%s\" - the settings really did not apply",
-                "RUECKLESEPROBE ABWEICHEND: der Server meldet \"%s\", erwartet war \"%s\" - die Settings sind wirklich nicht angekommen");
+                "R\u00dcCKLESEPROBE ABWEICHEND: der Server meldet \"%s\", erwartet war \"%s\" - die Settings sind wirklich nicht angekommen");
         Messages.put("settings.verify.unreadable", "Could not read the settings of room %s back",
-                "Settings von Raum %s liessen sich nicht zurueckliesen");
+                "Settings von Raum %s lie\u00dfen sich nicht zur\u00fccklesen");
         Messages.put("settings.debug.sent", "SaveRoomSettings sent: %s", "SaveRoomSettings gesendet: %s");
         Messages.put("settings.debug.await", "Waiting for %s / %s", "Warte auf %s / %s");
         Messages.put("settings.retry_raw",
                 "No confirmation - retrying with raw (Latin-1) strings",
-                "Keine Bestaetigung - Wiederholung mit rohen (Latin-1) Strings");
+                "Keine Best\u00e4tigung - Wiederholung mit rohen (Latin-1) Strings");
         Messages.put("settings.applied_raw",
                 "Room settings applied - the raw (Latin-1) variant was the one that worked",
-                "Raum-Settings uebernommen - die rohe (Latin-1) Variante hat gegriffen");
+                "Raum-Settings \u00fcbernommen - die rohe (Latin-1) Variante hat gegriffen");
         Messages.put("settings.retry",
                 "No confirmation for the room settings - the room was probably still reloading. Trying once more",
-                "Keine Bestaetigung fuer die Raum-Settings - der Raum lud wohl noch neu. Versuche es nochmal");
+                "Keine Best\u00e4tigung f\u00fcr die Raum-Settings - der Raum lud wohl noch neu. Versuche es nochmal");
         Messages.put("settings.rename",
                 "Renaming the room to \"%s\"",
                 "Benenne den Raum in \"%s\" um");
@@ -341,7 +341,9 @@ class MessageTable {
                 "Inventar: Teil %d von %d, bisher %d Objekte");
         Messages.put("inventory.no_answer",
                 "No inventory data after %d s - the server ignored the request. Press \"Load inventory\" again",
-                "Nach %d s keine Inventardaten - der Server hat die Anfrage ignoriert. Druecke nochmal \"Inventar laden\"");
+                "Nach %d s keine Inventardaten - der Server hat die Anfrage ignoriert. Dr\u00fccke nochmal \"Inventar laden\"");
+        Messages.put("ui.language.en", "English", "Englisch");
+        Messages.put("ui.language.de", "German", "Deutsch");
         Messages.put("ui.label.language",
                 "Language:",
                 "Sprache:");
@@ -551,13 +553,13 @@ class MessageTable {
                 "L\u00e4uft...");
         Messages.put("floorplan.verified",
                 "Floor plan verified: the room really is %sx%s with %s walkable tiles",
-                "Floorplan geprueft: der Raum ist wirklich %sx%s mit %s begehbaren Kacheln");
+                "Floorplan gepr\u00fcft: der Raum ist wirklich %sx%s mit %s begehbaren Kacheln");
         Messages.put("floorplan.mismatch",
                 "The server kept a different floor plan - sent %sx%s with %s tiles, room has %sx%s with %s. Retrying (%s/%s)",
                 "Der Server behielt einen anderen Floorplan - gesendet %sx%s mit %s Kacheln, Raum hat %sx%s mit %s. Neuer Versuch (%s/%s)");
         Messages.put("floorplan.never_applied",
                 "The floor plan was not applied. Without it the room keeps its creation layout and furni cannot be placed on tiles that do not exist",
-                "Der Floorplan wurde nicht uebernommen. Ohne ihn behaelt der Raum sein Erstell-Layout, und Moebel koennen nicht auf Kacheln gesetzt werden, die es nicht gibt");
+                "Der Floorplan wurde nicht \u00fcbernommen. Ohne ihn beh\u00e4lt der Raum sein Erstell-Layout, und M\u00f6bel k\u00f6nnen nicht auf Kacheln gesetzt werden, die es nicht gibt");
         Messages.put("floorplan.applied",
                 "Floor plan applied",
                 "Floorplan \u00fcbernommen");
@@ -849,6 +851,24 @@ class MessageTable {
         Messages.put("preset.name.fallback",
                 "Room",
                 "Raum");
+        Messages.put("preset.file_missing",
+                "The preset file \"%s\" no longer exists",
+                "Die Preset-Datei \"%s\" gibt es nicht mehr");
+        Messages.put("preset.open.unsupported",
+                "This system cannot open files from here - the folder is %s",
+                "Dieses System kann von hier keine Dateien öffnen - der Ordner ist %s");
+        Messages.put("preset.open.folder_instead",
+                "No editor is registered for \"%s\" - opened the folder instead",
+                "F\u00fcr \"%s\" ist kein Editor hinterlegt - stattdessen den Ordner geöffnet");
+        Messages.put("preset.open.failed",
+                "Could not open %s",
+                "%s konnte nicht geöffnet werden");
+        Messages.put("wired.cache.cleared",
+                "Wired cache cleared (%d entries)",
+                "Wired-Cache geleert (%d Einträge)");
+        Messages.put("wired.cache.busy",
+                "Wired configurations are being fetched right now - the cache stays as it is",
+                "Wired-Konfigurationen werden gerade geholt - der Cache bleibt wie er ist");
         Messages.put("preset.none_selected",
                 "No preset selected",
                 "Kein Preset ausgew\u00e4hlt");
@@ -1007,10 +1027,10 @@ class MessageTable {
                 "Der Raum-State meldet das Stacktile noch als vorhanden - der Abriss entscheidet, ob es wirklich weg ist");
         Messages.put("stacktile.helpers_placed",
                 "%s smaller stack tile(s) placed as well, so furni also fit into tight gaps",
-                "%s kleinere Stapelfelder zusaetzlich gesetzt, damit Moebel auch in enge Luecken passen");
+                "%s kleinere Stapelfelder zus\u00e4tzlich gesetzt, damit M\u00f6bel auch in enge L\u00fccken passen");
         Messages.put("stacktile.helper_unavailable",
                 "No %s stack tile available - tight gaps may stay empty",
-                "Kein %s Stapelfeld verfuegbar - enge Luecken bleiben moeglicherweise leer");
+                "Kein %s Stapelfeld verf\u00fcgbar - enge L\u00fccken bleiben m\u00f6glicherweise leer");
         Messages.put("stacktile.placed",
                 "Stack tile is in the room (ID %d)",
                 "Stacktile liegt im Raum (ID %d)");
@@ -1085,13 +1105,16 @@ class MessageTable {
                 "Raum kopieren");
         Messages.put("clone.export_only.done",
                 "Room saved as preset \"%s\" - nothing was built. Use \"Copy room + build\" or the Presets tab for that.",
-                "Raum als Preset \"%s\" gespeichert - es wurde nichts gebaut. Dafuer \"Raum kopieren + bauen\" oder den Presets-Tab benutzen.");
+                "Raum als Preset \"%s\" gespeichert - es wurde nichts gebaut. Daf\u00fcr \"Raum kopieren + bauen\" oder den Presets-Tab benutzen.");
         Messages.put("clone.export_only.announce",
                 "Room saved as preset - nothing built",
                 "Raum als Preset gespeichert - nichts gebaut");
         Messages.put("ui.checkbox.workannex",
-                "Temporary work area",
-                "Temporaerer Arbeitsbereich");
+                "Temporary work area in new rooms",
+                "Tempor\u00e4rer Arbeitsbereich in neuen R\u00e4umen");
+        Messages.put("ui.hint.workannex",
+                "Only applies when a room is created. Building into a room you are already in uses the free space there.",
+                "Gilt nur, wenn ein Raum angelegt wird. Beim Aufbauen in einen Raum, in dem du schon stehst, wird der freie Platz dort benutzt.");
         Messages.put("ui.contextmenu.remove",
                 "Remove",
                 "Entfernen");
@@ -1121,7 +1144,7 @@ class MessageTable {
                 "Ratelimit:");
         Messages.put("ui.label.roommodel",
                 "Room model of new rooms:",
-                "Raum-Modell neuer Raeume:");
+                "Raum-Modell neuer R\u00e4ume:");
         Messages.put("ui.label.savedpresets",
                 "Saved presets (double-click to select):",
                 "Gespeicherte Presets (Doppelklick w\u00e4hlt aus):");
@@ -1195,8 +1218,8 @@ class MessageTable {
                 "Settings",
                 "Einstellungen");
         Messages.put("ui.window.title",
-                "G-PresetsPlus - clone rooms with wired - %s",
-                "G-PresetsPlus - Raum klonen mit Wired - %s");
+                "G-PresetsPlus - Building & Wired Presets - %s",
+                "G-PresetsPlus - Building & Wired Presets - %s");
         Messages.put("wallitems.aborted",
                 "Wall furni aborted",
                 "Wandm\u00f6bel abgebrochen");

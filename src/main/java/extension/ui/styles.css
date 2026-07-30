@@ -228,3 +228,37 @@
 
 .g-light .status-failed { -fx-text-fill: #d10000; }
 .g-dark  .status-failed { -fx-text-fill: #ff8d82; }
+
+.hint-box {
+    -fx-padding: 8 10 8 10;
+    -fx-border-width: 0 1 1 1;
+    -fx-border-radius: 0 0 4 4;
+    -fx-background-radius: 0 0 4 4;
+}
+
+.g-light .hint-box {
+    -fx-border-color: #c8c8c8;
+    -fx-background-color: #f2f2f2;
+}
+
+.g-dark .hint-box {
+    -fx-border-color: #4a4a4a;
+    -fx-background-color: #323232;
+}
+
+.hint-box-solo {
+    -fx-padding: 8 10 8 10;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.g-light .hint-box-solo {
+    -fx-border-color: #c8c8c8;
+    -fx-background-color: #f2f2f2;
+}
+
+.g-dark .hint-box-solo {
+    -fx-border-color: #4a4a4a;
+    -fx-background-color: #323232;
+}

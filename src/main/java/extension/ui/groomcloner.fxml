@@ -50,9 +50,12 @@
                         <Label fx:id="nameSuffixLbl" layoutX="9.0" layoutY="136.0" text="Name suffix for the copy:" />
                         <TextField fx:id="nameSuffix_txt" layoutY="153.0" prefHeight="25.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0" />
                         <CheckBox fx:id="copyWallItemsCbx" layoutX="9.0" layoutY="190.0" mnemonicParsing="false" selected="true" text="Include wall furni" />
-                        <CheckBox fx:id="workAnnexCbx" layoutX="9.0" layoutY="214.0" mnemonicParsing="false" selected="true" text="Temporary work area" />
-                        <Label fx:id="cloneStatusLbl" styleClass="status-text" text="Ready" wrapText="true" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="118.0" />
-                        <CheckBox fx:id="onTopCloneCbx" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" onAction="#alwaysOnTopCloneClick" text="Always on top" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="9.0" />
+                        <HBox alignment="BASELINE_LEFT" spacing="8.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="9.0" AnchorPane.rightAnchor="9.0">
+                           <children>
+                              <Label fx:id="cloneStatusLbl" maxWidth="1.7976931348623157E308" styleClass="status-text" text="Ready" wrapText="true" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="onTopCloneCbx" mnemonicParsing="false" nodeOrientation="RIGHT_TO_LEFT" onAction="#alwaysOnTopCloneClick" text="Always on top" />
+                           </children>
+                        </HBox>
                      </children>
                   </AnchorPane>
                </children>
@@ -74,10 +77,22 @@
                   <Button fx:id="openPresetsFolderBtn" layoutX="330.0" layoutY="141.0" mnemonicParsing="false" onAction="#openPresetsFolderClick" prefHeight="25.0" prefWidth="190.0" text="Open presets folder" />
                   <Button fx:id="currentPresetBtn" layoutX="330.0" layoutY="176.0" mnemonicParsing="false" onAction="#openCurrentPresetClick" prefHeight="25.0" prefWidth="190.0" text="Open preset in editor" />
                   <Button fx:id="clearWiredBtn" layoutX="330.0" layoutY="211.0" mnemonicParsing="false" onAction="#clearWiredClick" prefHeight="25.0" prefWidth="190.0" text="Clear wired cache" />
-                  <Button fx:id="buildPresetBtn" layoutX="540.0" layoutY="36.0" mnemonicParsing="false" onAction="#buildSelectedPresetClick" prefHeight="44.0" prefWidth="220.0" text="Build in this room" />
-                  <Label fx:id="buildPresetHintLbl" layoutX="540.0" layoutY="84.0" prefWidth="220.0" text="Selects the preset. Start the build in game with :ip (click) or :ip x,y." wrapText="true" />
-                  <Button fx:id="presetToNewRoomBtn" layoutX="540.0" layoutY="140.0" mnemonicParsing="false" onAction="#presetToNewRoomClick" prefHeight="44.0" prefWidth="220.0" text="Create room + build" />
-                  <Label fx:id="presetToNewRoomHintLbl" layoutX="540.0" layoutY="188.0" prefWidth="220.0" text="Creates a room large enough for the preset, enters it and builds the preset there." wrapText="true" />
+                  <VBox layoutX="540.0" layoutY="36.0" prefWidth="230.0" spacing="14.0">
+                     <children>
+                        <VBox spacing="0.0">
+                           <children>
+                              <Button fx:id="buildPresetBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#buildSelectedPresetClick" prefHeight="40.0" text="Build in this room" />
+                              <Label fx:id="buildPresetHintLbl" maxWidth="1.7976931348623157E308" styleClass="hint-box" text="Selects the preset. Start the build in game with :ip (click) or :ip x,y." wrapText="true" />
+                           </children>
+                        </VBox>
+                        <VBox spacing="0.0">
+                           <children>
+                              <Button fx:id="presetToNewRoomBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#presetToNewRoomClick" prefHeight="40.0" text="Create room + build" />
+                              <Label fx:id="presetToNewRoomHintLbl" maxWidth="1.7976931348623157E308" styleClass="hint-box" text="Creates a room large enough for the preset, enters it and builds the preset there." wrapText="true" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </VBox>
                </children>
             </AnchorPane>
       </content>
@@ -87,35 +102,47 @@
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
                <children>
                   <Label fx:id="mainStackTileLbl" layoutX="14.0" layoutY="14.0" text="Main stack tile:" />
-                  <RadioButton layoutX="140.0" layoutY="14.0" mnemonicParsing="false" text="1x1">
-                     <toggleGroup>
-                        <ToggleGroup fx:id="stacktile_tgl" />
-                     </toggleGroup></RadioButton>
-                  <RadioButton layoutX="192.0" layoutY="14.0" mnemonicParsing="false" selected="true" text="2x2" toggleGroup="$stacktile_tgl" />
-                  <RadioButton layoutX="244.0" layoutY="14.0" mnemonicParsing="false" text="4x4" toggleGroup="$stacktile_tgl" />
-                  <RadioButton layoutX="296.0" layoutY="14.0" mnemonicParsing="false" text="6x6" toggleGroup="$stacktile_tgl" />
-                  <RadioButton layoutX="348.0" layoutY="14.0" mnemonicParsing="false" text="8x8" toggleGroup="$stacktile_tgl" />
+                  <HBox layoutX="140.0" layoutY="14.0" spacing="18.0">
+                     <children>
+                        <RadioButton mnemonicParsing="false" text="1x1">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="stacktile_tgl" />
+                           </toggleGroup></RadioButton>
+                        <RadioButton mnemonicParsing="false" selected="true" text="2x2" toggleGroup="$stacktile_tgl" />
+                        <RadioButton mnemonicParsing="false" text="4x4" toggleGroup="$stacktile_tgl" />
+                        <RadioButton mnemonicParsing="false" text="6x6" toggleGroup="$stacktile_tgl" />
+                        <RadioButton mnemonicParsing="false" text="8x8" toggleGroup="$stacktile_tgl" />
+                     </children>
+                  </HBox>
 
                   <Label fx:id="itemSourceLbl" layoutX="14.0" layoutY="45.0" text="Item source:" />
-                  <RadioButton fx:id="onlyInvCbx" layoutX="140.0" layoutY="45.0" mnemonicParsing="false" selected="true" text="Only Inventory" userData="ONLY_INVENTORY">
-                     <toggleGroup>
-                        <ToggleGroup fx:id="item_src_tgl" />
-                     </toggleGroup>
-                  </RadioButton>
-                  <RadioButton fx:id="preferInvCbx" layoutX="255.0" layoutY="45.0" mnemonicParsing="false" text="Prefer Inventory" toggleGroup="$item_src_tgl" userData="PREFER_INVENTORY" />
-                  <RadioButton fx:id="preferBcCbx" layoutX="380.0" layoutY="45.0" mnemonicParsing="false" text="Prefer BC" toggleGroup="$item_src_tgl" userData="PREFER_BC" />
-                  <RadioButton fx:id="onlyBcCbx" layoutX="470.0" layoutY="45.0" mnemonicParsing="false" text="Only BC" toggleGroup="$item_src_tgl" userData="ONLY_BC" />
+                  <HBox layoutX="140.0" layoutY="45.0" spacing="18.0">
+                     <children>
+                        <RadioButton fx:id="onlyInvCbx" mnemonicParsing="false" selected="true" text="Only Inventory" userData="ONLY_INVENTORY">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="item_src_tgl" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="preferInvCbx" mnemonicParsing="false" text="Prefer Inventory" toggleGroup="$item_src_tgl" userData="PREFER_INVENTORY" />
+                        <RadioButton fx:id="preferBcCbx" mnemonicParsing="false" text="Prefer BC" toggleGroup="$item_src_tgl" userData="PREFER_BC" />
+                        <RadioButton fx:id="onlyBcCbx" mnemonicParsing="false" text="Only BC" toggleGroup="$item_src_tgl" userData="ONLY_BC" />
+                     </children>
+                  </HBox>
 
                   <Label fx:id="ratelimitLbl" layoutX="14.0" layoutY="78.0" text="Ratelimit:" />
                   <Slider fx:id="ratelimiter" layoutX="140.0" layoutY="80.0" prefHeight="14.0" prefWidth="219.0" value="22.0" />
 
                   <Label fx:id="languageLbl" layoutX="14.0" layoutY="111.0" text="Language:" />
-                  <RadioButton fx:id="langEn" layoutX="140.0" layoutY="111.0" mnemonicParsing="false" selected="true" text="English" userData="EN">
-                     <toggleGroup>
-                        <ToggleGroup fx:id="lang_tgl" />
-                     </toggleGroup>
-                  </RadioButton>
-                  <RadioButton fx:id="langDe" layoutX="255.0" layoutY="111.0" mnemonicParsing="false" text="Deutsch" toggleGroup="$lang_tgl" userData="DE" />
+                  <HBox layoutX="140.0" layoutY="111.0" spacing="18.0">
+                     <children>
+                        <RadioButton fx:id="langEn" mnemonicParsing="false" selected="true" text="English" userData="EN">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="lang_tgl" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="langDe" mnemonicParsing="false" text="German" toggleGroup="$lang_tgl" userData="DE" />
+                     </children>
+                  </HBox>
 
                   <Label fx:id="donateLabel" layoutX="14.0" layoutY="144.0" text="Self-donate:" visible="false" />
                   <RadioButton fx:id="donateMissing" layoutX="140.0" layoutY="144.0" mnemonicParsing="false" selected="true" text="Only missing items" userData="MISSING_ITEMS" visible="false">
@@ -127,9 +154,18 @@
 
                   <Label fx:id="roomModelLbl" layoutX="14.0" layoutY="147.0" text="Room model of new rooms:" />
                   <TextField fx:id="roomModel_txt" layoutX="220.0" layoutY="143.0" prefHeight="25.0" prefWidth="140.0" promptText="model_a" />
-                  <CheckBox fx:id="noExportWiredCbx" layoutX="14.0" layoutY="180.0" mnemonicParsing="false" text="Do not export wired" />
-                  <CheckBox fx:id="allowIncompleteBuildsCbx" layoutX="14.0" layoutY="205.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="300.0" text="Allow building without all furni" />
-                  <CheckBox fx:id="onTopCbx" layoutX="14.0" layoutY="230.0" mnemonicParsing="false" onAction="#alwaysOnTopClick" text="Always on top" />
+                  <VBox layoutX="14.0" layoutY="180.0" spacing="12.0">
+                     <children>
+                        <VBox spacing="5.0">
+                           <children>
+                              <CheckBox fx:id="workAnnexCbx" mnemonicParsing="false" selected="true" text="Temporary work area in new rooms" />
+                              <Label fx:id="workAnnexHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="Only applies when a room is created. Building into a room you are already in uses the free space there." wrapText="true" />
+                           </children>
+                        </VBox>
+                        <CheckBox fx:id="noExportWiredCbx" mnemonicParsing="false" text="Do not export wired" />
+                        <CheckBox fx:id="allowIncompleteBuildsCbx" mnemonicParsing="false" text="Allow building without all furni" />
+                     </children>
+                  </VBox>
                </children></AnchorPane>
       </content>
     </Tab>

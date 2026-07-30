@@ -38,7 +38,7 @@ public class RoomCapture {
         executor.register(awaiting);
 
         if (executor.sendFirstKnown("GetHeightMap", "GetRoomEntryTile") == null) {
-            logger.log(Messages.get("capture.no_refresh_request"), "orange");
+            logger.logKey("capture.no_refresh_request", "orange");
         }
         executor.awaitPacketList(awaiting);
 
@@ -65,7 +65,7 @@ public class RoomCapture {
             }
         }
         if (packets.get("GetGuestRoomResult") == null) {
-            logger.log(Messages.get("capture.roomdata.missing"), "red");
+            logger.logKey("capture.roomdata.missing", "red");
             return null;
         }
 
@@ -76,7 +76,7 @@ public class RoomCapture {
             try {
                 floorPlan = new FloorPlanSnapshot(packets.get("FloorHeightMap"), packets.get("RoomEntryTile"));
             } catch (Throwable t) {
-                logger.log(Messages.get("capture.floorplan.read_failed", t), "red");
+                logger.logKey("capture.floorplan.read_failed", "red", t);
             }
         }
 
@@ -85,21 +85,18 @@ public class RoomCapture {
             try {
                 wallItems = new WallItemsSnapshot(packets.get("Items"), furniData);
             } catch (Throwable t) {
-                logger.log(Messages.get("capture.wallitems.read_failed", t), "orange");
+                logger.logKey("capture.wallitems.read_failed", "orange", t);
             }
         }
 
         if (!missing.isEmpty()) {
-            logger.log(Messages.get("capture.not_recorded", String.join(", ", missing)), "orange");
+            logger.logKey("capture.not_recorded", "orange", String.join(", ", missing));
         }
 
-        logger.log(Messages.get("capture.summary",
-                settings.name, settings.id,
-                floorPlan == null
+        logger.logKey("capture.summary", "green", settings.name, settings.id, floorPlan == null
                         ? Messages.get("capture.floorplan.missing")
                         : Messages.get("capture.floorplan.dimensions",
-                                floorPlan.width(), floorPlan.height(), floorPlan.usableTiles()),
-                wallItems == null ? 0 : wallItems.size()), "green");
+                                floorPlan.width(), floorPlan.height(), floorPlan.usableTiles()), wallItems == null ? 0 : wallItems.size());
 
         return new RoomSnapshot(settings, floorPlan, wallItems);
     }

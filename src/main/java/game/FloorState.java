@@ -81,7 +81,7 @@ public class FloorState {
             }
         }
 
-        logger.log(Messages.get("capture.floorplan.parsed"), "blue");
+        logger.logKey("capture.floorplan.parsed", "blue");
     }
 
     private void roomEntryInfo(HMessage hMessage) {
@@ -137,7 +137,7 @@ public class FloorState {
             this.heightmap = heightmap;
         }
 
-        logger.log(Messages.get("capture.heightmap.parsed"), "blue");
+        logger.logKey("capture.heightmap.parsed", "blue");
     }
     private void heightmapUpdate(HMessage hMessage) {
         if (heightmap != null) {
@@ -174,7 +174,7 @@ public class FloorState {
         }
 
         onFloorStateChange.call();
-        logger.log(Messages.get("capture.flooritems.parsed"), "blue");
+        logger.logKey("capture.flooritems.parsed", "blue");
     }
 
     private void onObjectRemove(HMessage hMessage) {

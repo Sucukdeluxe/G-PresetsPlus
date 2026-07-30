@@ -83,7 +83,7 @@ public class RoomSettingsFull {
 
     public static RoomSettingsFull request(Executor executor, Logger logger, int roomId, boolean quiet) {
         if (!executor.isKnownName(HMessage.Direction.TOSERVER, "GetRoomSettings")) {
-            logger.log(Messages.get("settings.header_unresolvable"), "orange");
+            logger.logKey("settings.header_unresolvable", "orange");
             return null;
         }
 
@@ -93,27 +93,24 @@ public class RoomSettingsFull {
         executor.register(answer);
 
         if (!executor.sendToServer("GetRoomSettings", roomId)) {
-            logger.log(Messages.get("settings.get.send_failed"), "orange");
+            logger.logKey("settings.get.send_failed", "orange");
             return null;
         }
 
         HPacket response = executor.awaitPacket(answer);
         if (response == null) {
-            logger.log(Messages.get("settings.no_response"), "orange");
+            logger.logKey("settings.no_response", "orange");
             return null;
         }
 
         try {
             RoomSettingsFull settings = new RoomSettingsFull(response);
             if (!quiet) {
-                logger.log(Messages.get("settings.full_read",
-                        settings.chatFloodSensitivity,
-                        settings.idleSleepTimeoutSeconds, settings.idleAutokickTimeoutSeconds,
-                        settings.whoCanMute, settings.whoCanKick, settings.whoCanBan), "green");
+                logger.logKey("settings.full_read", "green", settings.chatFloodSensitivity, settings.idleSleepTimeoutSeconds, settings.idleAutokickTimeoutSeconds, settings.whoCanMute, settings.whoCanKick, settings.whoCanBan);
             }
             return settings;
         } catch (Throwable t) {
-            logger.log(Messages.get("settings.read_failed", t), "orange");
+            logger.logKey("settings.read_failed", "orange", t);
             return null;
         }
     }

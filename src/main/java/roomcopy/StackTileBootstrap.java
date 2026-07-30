@@ -37,13 +37,13 @@ public class StackTileBootstrap {
 
         List<HFloorItem> existing = floorState.getItemsFromType(furniData, className);
         if (!existing.isEmpty()) {
-            logger.log(Messages.get("stacktile.already_present"), "green");
+            logger.logKey("stacktile.already_present", "green");
             return ALREADY_PRESENT;
         }
 
         Integer typeId = furniData.getFloorTypeId(className);
         if (typeId == null) {
-            logger.log(Messages.get("stacktile.not_in_furnidata", className), "red");
+            logger.logKey("stacktile.not_in_furnidata", "red", className);
             return FAILED;
         }
 
@@ -59,13 +59,12 @@ public class StackTileBootstrap {
             if (bcOfferId != -1 && itemSource != ItemSource.ONLY_INVENTORY) {
                 useBc = true;
             } else {
-                logger.log(Messages.get("stacktile.none_available", className), "red");
+                logger.logKey("stacktile.none_available", "red", className);
                 return FAILED;
             }
         }
 
-        logger.log(Messages.get("stacktile.placing", className, location.getX(), location.getY(),
-                useBc ? Messages.get("stacktile.source.bc") : Messages.get("stacktile.source.inventory")), "blue");
+        logger.logKey("stacktile.placing", "blue", className, location.getX(), location.getY(), useBc ? Messages.get("stacktile.source.bc") : Messages.get("stacktile.source.inventory"));
 
         Executor.AwaitingPacket added =
                 new Executor.AwaitingPacket("ObjectAdd", HMessage.Direction.TOCLIENT, 5000)
@@ -86,13 +85,13 @@ public class StackTileBootstrap {
         }
 
         if (!sent) {
-            logger.log(Messages.get("stacktile.send_failed"), "red");
+            logger.logKey("stacktile.send_failed", "red");
             return FAILED;
         }
 
         HPacket response = executor.awaitPacket(added);
         if (response == null) {
-            logger.log(Messages.get("stacktile.not_confirmed"), "red");
+            logger.logKey("stacktile.not_confirmed", "red");
             return FAILED;
         }
 
@@ -100,12 +99,12 @@ public class StackTileBootstrap {
 
         List<HFloorItem> placed = floorState.getItemsFromType(furniData, className);
         if (placed.isEmpty()) {
-            logger.log(Messages.get("stacktile.missing_in_state"), "orange");
+            logger.logKey("stacktile.missing_in_state", "orange");
             return FAILED;
         }
 
         int placedId = placed.get(0).getId();
-        logger.log(Messages.get("stacktile.in_room", placedId), "green");
+        logger.logKey("stacktile.in_room", "green", placedId);
         return placedId;
     }
 }

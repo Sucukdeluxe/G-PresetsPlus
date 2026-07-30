@@ -73,7 +73,7 @@ public class CloneOrchestrator {
     public void cancel() {
         if (running) {
             cancelRequested = true;
-            logger.log(Messages.get("clone.cancel.requested"), "orange");
+            logger.logKey("clone.cancel.requested", "orange");
         }
     }
 
@@ -95,7 +95,7 @@ public class CloneOrchestrator {
 
     public boolean start(boolean buildAfterExport, Consumer<Boolean> onFinished) {
         if (running) {
-            logger.log(Messages.get("clone.already_running"), "red");
+            logger.logKey("clone.already_running", "red");
             return false;
         }
         running = true;
@@ -107,7 +107,7 @@ public class CloneOrchestrator {
                 success = run(buildAfterExport);
             } catch (Throwable t) {
                 t.printStackTrace();
-                logger.log(Messages.get("clone.aborted.exception", t), "red");
+                logger.logKey("clone.aborted.exception", "red", t);
             } finally {
                 running = false;
                 if (onFinished != null) {
@@ -122,7 +122,7 @@ public class CloneOrchestrator {
 
     public boolean startPresetToNewRoom(String presetName, Consumer<Boolean> onFinished) {
         if (running) {
-            logger.log(Messages.get("clone.already_running"), "red");
+            logger.logKey("clone.already_running", "red");
             return false;
         }
         running = true;
@@ -134,7 +134,7 @@ public class CloneOrchestrator {
                 success = runPresetToNewRoom(presetName);
             } catch (Throwable t) {
                 t.printStackTrace();
-                logger.log(Messages.get("clone.aborted.exception", t), "red");
+                logger.logKey("clone.aborted.exception", "red", t);
             } finally {
                 running = false;
                 if (onFinished != null) {
@@ -148,16 +148,16 @@ public class CloneOrchestrator {
     }
 
     private boolean runPresetToNewRoom(String presetName) {
-        logger.log(Messages.get("preset.newroom.title", presetName), "purple");
+        logger.logKey("preset.newroom.title", "purple", presetName);
 
         if (!extension.furniDataReady()) {
-            logger.log(Messages.get("clone.furnidata_not_ready"), "red");
+            logger.logKey("clone.furnidata_not_ready", "red");
             return false;
         }
 
         PresetConfig preset = PresetConfigUtils.loadPreset(presetName);
         if (preset == null || preset.getFurniture().isEmpty()) {
-            logger.log(Messages.get("preset.newroom.load_failed", presetName), "red");
+            logger.logKey("preset.newroom.load_failed", "red", presetName);
             return false;
         }
 
@@ -171,10 +171,10 @@ public class CloneOrchestrator {
         int planHeight = maxY + 1;
 
         if (planWidth > 60 || planHeight > 60) {
-            logger.log(Messages.get("preset.newroom.too_large", planWidth, planHeight), "red");
+            logger.logKey("preset.newroom.too_large", "red", planWidth, planHeight);
             return false;
         }
-        logger.log(Messages.get("preset.newroom.summary", presetName, preset.getFurniture().size(), planWidth, planHeight), "green");
+        logger.logKey("preset.newroom.summary", "green", presetName, preset.getFurniture().size(), planWidth, planHeight);
 
         RoomSnapshot saved = loadRoomSnapshot(presetName);
         FloorPlanSnapshot basePlan;
@@ -184,19 +184,15 @@ public class CloneOrchestrator {
             basePlan = saved.floorPlan;
             snapshot = saved;
             presetRoot = new HPoint(0, 0);
-            logger.log(Messages.get("preset.newroom.saved_plan",
-                    basePlan.width(), basePlan.height(), basePlan.usableTiles(),
-                    basePlan.doorX, basePlan.doorY), "green");
+            logger.logKey("preset.newroom.saved_plan", "green", basePlan.width(), basePlan.height(), basePlan.usableTiles(), basePlan.doorX, basePlan.doorY);
             if (planWidth > basePlan.width() || planHeight > basePlan.height()) {
-                logger.log(Messages.get("preset.newroom.plan_too_small",
-                        planWidth, planHeight, basePlan.width(), basePlan.height()), "orange");
+                logger.logKey("preset.newroom.plan_too_small", "orange", planWidth, planHeight, basePlan.width(), basePlan.height());
             }
         } else {
             basePlan = FloorPlanSnapshot.forPreset(planWidth, planHeight);
             snapshot = new RoomSnapshot(RoomSettingsSnapshot.defaults(presetName), basePlan, null);
             presetRoot = new HPoint(FloorPlanSnapshot.PRESET_ORIGIN, FloorPlanSnapshot.PRESET_ORIGIN);
-            logger.log(Messages.get("preset.newroom.generated_plan",
-                    basePlan.width(), basePlan.height()), "blue");
+            logger.logKey("preset.newroom.generated_plan", "blue", basePlan.width(), basePlan.height());
         }
 
         if (cancelled()) return false;
@@ -207,7 +203,7 @@ public class CloneOrchestrator {
                 ? storedSettings.name
                 : presetName;
         String newName = baseName + nameSuffix;
-        logger.log(Messages.get("preset.newroom.roomname", newName), "blue");
+        logger.logKey("preset.newroom.roomname", "blue", newName);
 
         roomCreator.logRoomQuota();
         RoomCreator.CreatedRoom created = roomCreator.createRoom(
@@ -218,7 +214,7 @@ public class CloneOrchestrator {
         if (cancelled()) return false;
 
         if (!roomCreator.enterRoom(created.roomId, "")) {
-            logger.log(Messages.get("room.enter.failed", created.roomId), "orange");
+            logger.logKey("room.enter.failed", "orange", created.roomId);
             return false;
         }
         Utils.sleep(600);
@@ -251,7 +247,7 @@ public class CloneOrchestrator {
             reservedSpace = stackTileLocation == null
                     ? null : pickReservedSpace(snapshot, preset, stackTileLocation);
             if (stackTileLocation == null || reservedSpace == null) {
-                logger.log(Messages.get("stacktile.no_space_found"), "red");
+                logger.logKey("stacktile.no_space_found", "red");
                 return false;
             }
         }
@@ -282,9 +278,9 @@ public class CloneOrchestrator {
             cleanedUp = pickUpStackTile(stackTileId);
         }
 
-        logger.log(Messages.get("clone.done", presetName, created.roomId), "purple");
+        announce("purple", "clone.done", newName, created.roomId);
         if (!cleanedUp) {
-            logger.log(Messages.get("clone.cleanup_incomplete"), "orange");
+            logger.logKey("clone.cleanup_incomplete", "orange");
         }
         return true;
     }
@@ -307,7 +303,7 @@ public class CloneOrchestrator {
         addHelperStackTile(placed, StackTileSetting.Small, mainDimension, smallSpot);
 
         if (!placed.isEmpty()) {
-            logger.log(Messages.get("stacktile.helpers_placed", placed.size()), "green");
+            logger.logKey("stacktile.helpers_placed", "green", placed.size());
         }
         return placed;
     }
@@ -323,7 +319,7 @@ public class CloneOrchestrator {
         if (id > 0) {
             placed.add(id);
         } else if (id == StackTileBootstrap.FAILED) {
-            logger.log(Messages.get("stacktile.helper_unavailable", setting.toString()), "orange");
+            logger.logKey("stacktile.helper_unavailable", "orange", setting.toString());
         }
     }
 
@@ -334,13 +330,13 @@ public class CloneOrchestrator {
     public void reloadCurrentRoom() {
         int roomId = extension.getFloorState().getRoomId();
         if (roomId == 0) {
-            logger.log(Messages.get("room.reload.unknown"), "red");
+            logger.logKey("room.reload.unknown", "red");
             return;
         }
         Thread thread = new Thread(() -> {
-            logger.log(Messages.get("room.reload.start", roomId), "blue");
+            logger.logKey("room.reload.start", "blue", roomId);
             if (roomCreator.enterRoom(roomId, "")) {
-                logger.log(Messages.get("room.reload.done"), "green");
+                logger.logKey("room.reload.done", "green");
             }
         }, "room-reload");
         thread.setDaemon(true);
@@ -354,33 +350,36 @@ public class CloneOrchestrator {
         }
         int roomId = floorState.getRoomId();
         if (roomId == 0) {
-            logger.log(Messages.get("clone.no_room"), "red");
+            logger.logKey("clone.no_room", "red");
             return false;
         }
-        logger.log(Messages.get("room.reload.start", roomId), "blue");
+        logger.logKey("room.reload.start", "blue", roomId);
         if (!roomCreator.enterRoom(roomId, "")) {
             return false;
         }
         Utils.sleep(800);
         if (!floorState.inRoom()) {
-            logger.log(Messages.get("clone.no_room"), "red");
+            logger.logKey("clone.no_room", "red");
             return false;
         }
-        logger.log(Messages.get("room.reload.done"), "green");
+        logger.logKey("room.reload.done", "green");
         return true;
     }
 
     private void announce(String key, Object... args) {
-        String text = Messages.get(key, args);
-        logger.log(text, "blue");
-        extension.sendVisualChatInfo(text);
+        announce("blue", key, args);
+    }
+
+    private void announce(String colour, String key, Object... args) {
+        logger.logKey(key, colour, args);
+        extension.sendVisualChatInfo(Messages.get(key, args));
     }
 
     private boolean run(boolean buildAfterExport) {
-        logger.log(Messages.get("clone.start.header"), "purple");
+        logger.logKey("clone.start.header", "purple");
 
         if (!extension.furniDataReady()) {
-            logger.log(Messages.get("clone.furnidata_not_ready"), "red");
+            logger.logKey("clone.furnidata_not_ready", "red");
             return false;
         }
         if (!ensureRoomState()) {
@@ -388,7 +387,7 @@ public class CloneOrchestrator {
         }
         FloorState floorState = extension.getFloorState();
         if (!extension.getPermissions().canMoveFurni()) {
-            logger.log(Messages.get("clone.no_furni_rights"), "red");
+            logger.logKey("clone.no_furni_rights", "red");
             return false;
         }
 
@@ -397,14 +396,14 @@ public class CloneOrchestrator {
             return false;
         }
         if (snapshot.floorPlan == null) {
-            logger.log(Messages.get("clone.no_floorplan"), "red");
+            logger.logKey("clone.no_floorplan", "red");
             return false;
         }
         if (cancelled()) return false;
 
         RoomSettingsFull sourceSettings = RoomSettingsFull.request(executor, logger, snapshot.settings.id);
         if (sourceSettings == null && snapshot.settings.missingFields > 0) {
-            logger.log(Messages.get("capture.settings_fields_missing", snapshot.settings.missingFields), "orange");
+            logger.logKey("capture.settings_fields_missing", "orange", snapshot.settings.missingFields);
         }
 
         String presetName = presetNameFor(snapshot.settings);
@@ -415,22 +414,21 @@ public class CloneOrchestrator {
 
         PresetConfig preset = PresetConfigUtils.loadPreset(presetName);
         if (preset == null) {
-            logger.log(Messages.get("preset.load_failed.after_export"), "red");
+            logger.logKey("preset.load_failed.after_export", "red");
             return false;
         }
-        logger.log(Messages.get("preset.exported.summary", presetName, preset.getFurniture().size()), "green");
+        logger.logKey("preset.exported.summary", "green", presetName, preset.getFurniture().size());
 
         writeRoomSnapshot(presetName, snapshot, sourceSettings);
 
         if (!buildAfterExport) {
-            logger.log(Messages.get("clone.export_only.done", presetName), "green");
-            announce("clone.export_only.announce");
+            announce("green", "clone.export_only.done", presetName);
             return true;
         }
 
         int sourceHeightOffset = PresetUtils.lowestFloorPoint(floorState,
                 new HPoint(0, 0), new HPoint(ROOM_SCAN_SIZE, ROOM_SCAN_SIZE));
-        logger.log(Messages.get("clone.source_height_offset", sourceHeightOffset), "blue");
+        logger.logKey("clone.source_height_offset", "blue", sourceHeightOffset);
 
         if (cancelled()) return false;
 
@@ -438,7 +436,7 @@ public class CloneOrchestrator {
 
         String newName = snapshot.settings.name + nameSuffix;
         String creationName = safeCreationName(snapshot.settings.id);
-        logger.log(Messages.get("room.create.safe_name", creationName, newName), "blue");
+        logger.logKey("room.create.safe_name", "blue", creationName, newName);
 
         RoomCreator.CreatedRoom created = roomCreator.createRoom(
                 creationName, "", roomModel, 0, 25, 0, snapshot.settings.id);
@@ -448,7 +446,7 @@ public class CloneOrchestrator {
         if (cancelled()) return false;
 
         if (!roomCreator.enterRoom(created.roomId, "")) {
-            logger.log(Messages.get("room.enter.failed", created.roomId), "orange");
+            logger.logKey("room.enter.failed", "orange", created.roomId);
             return false;
         }
 
@@ -458,7 +456,7 @@ public class CloneOrchestrator {
                 ? WorkAnnex.build(snapshot.floorPlan, extension.getStackTileSetting().getDimension())
                 : null;
         if (useWorkAnnex && annex == null) {
-            logger.log(Messages.get("annex.not_fitting"), "orange");
+            logger.logKey("annex.not_fitting", "orange");
         }
 
         if (!applyFloorPlan(snapshot, annex)) {
@@ -489,12 +487,12 @@ public class CloneOrchestrator {
         } else {
             stackTileLocation = pickStackTileLocation(snapshot, preset);
             if (stackTileLocation == null) {
-                logger.log(Messages.get("stacktile.no_spot"), "red");
+                logger.logKey("stacktile.no_spot", "red");
                 return false;
             }
             reservedSpace = pickReservedSpace(snapshot, preset, stackTileLocation);
             if (reservedSpace == null) {
-                logger.log(Messages.get("clone.no_free_space"), "red");
+                logger.logKey("clone.no_free_space", "red");
                 return false;
             }
         }
@@ -513,7 +511,7 @@ public class CloneOrchestrator {
         int targetHeightOffset = PresetUtils.lowestFloorPoint(extension.getFloorState(),
                 new HPoint(0, 0), new HPoint(ROOM_SCAN_SIZE, ROOM_SCAN_SIZE));
         if (targetHeightOffset != sourceHeightOffset) {
-            logger.log(Messages.get("clone.height_offset_mismatch", targetHeightOffset, sourceHeightOffset), "orange");
+            logger.logKey("clone.height_offset_mismatch", "orange", targetHeightOffset, sourceHeightOffset);
         }
 
         if (!buildPreset(preset, reservedSpace, sourceHeightOffset, stackTileLocation, new HPoint(0, 0))) {
@@ -533,17 +531,17 @@ public class CloneOrchestrator {
 
         if (copyWallItems && snapshot.wallItems != null && snapshot.wallItems.size() > 0) {
             if (cancelled()) {
-                logger.log(Messages.get("wallitems.skipped_cancelled"), "orange");
+                logger.logKey("wallitems.skipped_cancelled", "orange");
             } else {
-                logger.log(Messages.get("wallitems.placing", snapshot.wallItems.size()), "blue");
+                logger.logKey("wallitems.placing", "blue", snapshot.wallItems.size());
                 snapshot.wallItems.applyTo(executor, extension.getInventory(),
                         extension.getFurniDataTools(), logger, () -> !cancelled());
             }
         }
 
-        logger.log(Messages.get("clone.done", newName, created.roomId), "purple");
+        announce("purple", "clone.done", newName, created.roomId);
         if (!cleanedUp) {
-            logger.log(Messages.get("clone.cleanup_incomplete"), "orange");
+            logger.logKey("clone.cleanup_incomplete", "orange");
         }
         return true;
     }
@@ -569,7 +567,7 @@ public class CloneOrchestrator {
     private String uniquePresetName(String base) {
         String chosen = numberedName(base, CloneOrchestrator::presetNameTaken);
         if (!chosen.equals(base)) {
-            logger.log(Messages.get("preset.name.numbered", base, chosen), "blue");
+            logger.logKey("preset.name.numbered", "blue", base, chosen);
         }
         return chosen;
     }
@@ -604,19 +602,19 @@ public class CloneOrchestrator {
         while (exportResult == null) {
             if (cancelled()) {
                 extension.getExporter().reset();
-                logger.log(Messages.get("preset.export.cancelled"), "orange");
+                logger.logKey("preset.export.cancelled", "orange");
                 return false;
             }
             if (System.currentTimeMillis() > deadline) {
                 extension.getExporter().reset();
-                logger.log(Messages.get("preset.export.timeout"), "red");
+                logger.logKey("preset.export.timeout", "red");
                 return false;
             }
             Utils.sleep(200);
         }
 
         if (!Boolean.TRUE.equals(exportResult)) {
-            logger.log(Messages.get("preset.export.failed"), "red");
+            logger.logKey("preset.export.failed", "red");
             return false;
         }
         extension.updateInstalledPresets();
@@ -632,7 +630,7 @@ public class CloneOrchestrator {
             String json = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
             return new RoomSnapshot(new JSONObject(json));
         } catch (Throwable t) {
-            logger.log(Messages.get("preset.newroom.snapshot_unreadable", file.getName(), t), "orange");
+            logger.logKey("preset.newroom.snapshot_unreadable", "orange", file.getName(), t);
             return null;
         }
     }
@@ -649,9 +647,9 @@ public class CloneOrchestrator {
                 Files.newOutputStream(target.toPath()), StandardCharsets.UTF_8)) {
             writer.write(snapshot.toJson().toString(4));
             writer.flush();
-            logger.log(Messages.get("capture.roomdata.saved", target.getName()), "blue");
+            logger.logKey("capture.roomdata.saved", "blue", target.getName());
         } catch (IOException e) {
-            logger.log(Messages.get("capture.roomdata.save_failed", e), "orange");
+            logger.logKey("capture.roomdata.save_failed", "orange", e);
         }
     }
 
@@ -667,12 +665,12 @@ public class CloneOrchestrator {
     private boolean applyRoomSettings(RoomSnapshot snapshot, RoomSettingsFull sourceSettings, int newRoomId,
                                       String nameOverride, String fallbackName) {
         if (nameOverride != null) {
-            logger.log(Messages.get("settings.rename", nameOverride), "blue");
+            logger.logKey("settings.rename", "blue", nameOverride);
         }
         int lockType = sourceSettings != null ? sourceSettings.doorMode : snapshot.settings.lockType;
         boolean havePassword = sourceSettings != null && !sourceSettings.doorPassword.isEmpty();
         if (lockType == 2 && !havePassword) {
-            logger.log(Messages.get("settings.door_password_warning"), "orange");
+            logger.logKey("settings.door_password_warning", "orange");
             lockType = 0;
         }
 
@@ -694,25 +692,23 @@ public class CloneOrchestrator {
         }
 
         if (!sent) {
-            logger.log(Messages.get("settings.save.send_failed"), "red");
+            logger.logKey("settings.save.send_failed", "red");
             return false;
         }
 
         executor.awaitPacket(saved, error);
         if (error.getPacket() != null) {
-            logger.log(Messages.get("settings.rejected", error.getPacket().toExpression()), "orange");
+            logger.logKey("settings.rejected", "orange", error.getPacket().toExpression());
             return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
         }
         if (saved.getPacket() != null) {
-            logger.log(Messages.get("settings.applied"), "green");
+            logger.logKey("settings.applied", "green");
             return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
         }
 
-        logger.log(Messages.get("settings.debug.sent", executor.lastSentDescription()), "gray");
-        logger.log(Messages.get("settings.debug.await",
-                executor.describeHeader(HMessage.Direction.TOCLIENT, "RoomSettingsSaved"),
-                executor.describeHeader(HMessage.Direction.TOCLIENT, "RoomSettingsSaveError")), "gray");
-        logger.log(Messages.get("settings.retry_raw"), "orange");
+        logger.logKey("settings.debug.sent", "gray", executor.lastSentDescription());
+        logger.logKey("settings.debug.await", "gray", executor.describeHeader(HMessage.Direction.TOCLIENT, "RoomSettingsSaved"), executor.describeHeader(HMessage.Direction.TOCLIENT, "RoomSettingsSaveError"));
+        logger.logKey("settings.retry_raw", "orange");
         Utils.sleep(3000);
 
         Executor.AwaitingPacket saved2 =
@@ -726,15 +722,15 @@ public class CloneOrchestrator {
         } else {
             snapshot.settings.applyTo(executor, newRoomId, null, lockType, nameOverride, true);
         }
-        logger.log(Messages.get("settings.debug.sent", executor.lastSentDescription()), "gray");
+        logger.logKey("settings.debug.sent", "gray", executor.lastSentDescription());
 
         executor.awaitPacket(saved2, error2);
         if (saved2.getPacket() != null) {
-            logger.log(Messages.get("settings.applied_raw"), "green");
+            logger.logKey("settings.applied_raw", "green");
         } else if (error2.getPacket() != null) {
-            logger.log(Messages.get("settings.rejected", error2.getPacket().toExpression()), "orange");
+            logger.logKey("settings.rejected", "orange", error2.getPacket().toExpression());
         } else {
-            logger.log(Messages.get("settings.no_confirmation"), "orange");
+            logger.logKey("settings.no_confirmation", "orange");
         }
         return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
     }
@@ -749,7 +745,7 @@ public class CloneOrchestrator {
             return true;
         }
 
-        logger.log(Messages.get("settings.name_fallback", expectedName, fallbackName), "orange");
+        logger.logKey("settings.name_fallback", "orange", expectedName, fallbackName);
         Utils.sleep(1500);
 
         Executor.AwaitingPacket saved =
@@ -766,9 +762,9 @@ public class CloneOrchestrator {
         executor.awaitPacket(saved, error);
 
         if (verifyRoomSettings(newRoomId, fallbackName, sourceSettings)) {
-            logger.log(Messages.get("settings.name_fallback_ok", fallbackName), "green");
+            logger.logKey("settings.name_fallback_ok", "green", fallbackName);
         } else {
-            logger.log(Messages.get("settings.name_fallback_failed"), "red");
+            logger.logKey("settings.name_fallback_failed", "red");
         }
         return true;
     }
@@ -776,7 +772,7 @@ public class CloneOrchestrator {
     private boolean verifyRoomSettings(int roomId, String expectedName, RoomSettingsFull expected) {
         RoomSettingsFull check = RoomSettingsFull.request(executor, logger, roomId, true);
         if (check == null) {
-            logger.log(Messages.get("settings.verify.unreadable", roomId), "orange");
+            logger.logKey("settings.verify.unreadable", "orange", roomId);
             return true;
         }
 
@@ -808,10 +804,10 @@ public class CloneOrchestrator {
 
         boolean nameMatches = expectedName == null || expectedName.equals(check.name);
         if (diffs.isEmpty()) {
-            logger.log(Messages.get("settings.verify.all_ok", check.name), "green");
+            logger.logKey("settings.verify.all_ok", "green", check.name);
             return true;
         }
-        logger.log(Messages.get("settings.verify.diff_count", diffs.size()), "red");
+        logger.logKey("settings.verify.diff_count", "red", diffs.size());
         for (String diff : diffs) {
             logger.log("   " + diff, "orange");
         }
@@ -836,11 +832,11 @@ public class CloneOrchestrator {
                 snapshot.settings.wallThickness, snapshot.settings.floorThickness);
 
         if (snapshot.floorPlan.wallHeight < 0) {
-            logger.log(Messages.get("floorplan.wallheight_default"), "blue");
+            logger.logKey("floorplan.wallheight_default", "blue");
         }
         if (annex != null) {
             logger.log(annex.describe(extension.getStackTileSetting().getDimension()), "blue");
-            logger.log(Messages.get("annex.purpose"), "blue");
+            logger.logKey("annex.purpose", "blue");
         }
 
         String expectedPlan = annex != null ? annex.getPlan() : snapshot.floorPlan.floorPlan;
@@ -861,13 +857,13 @@ public class CloneOrchestrator {
                             snapshot.settings.wallThickness, snapshot.settings.floorThickness);
 
             if (!sent) {
-                logger.log(Messages.get("floorplan.send_failed"), "red");
+                logger.logKey("floorplan.send_failed", "red");
                 return false;
             }
 
             executor.awaitPacketList(floorHeightMap, objects);
             if (floorHeightMap.getPacket() == null) {
-                logger.log(Messages.get("floorplan.not_confirmed", roomModel), "red");
+                logger.logKey("floorplan.not_confirmed", "red", roomModel);
                 return false;
             }
 
@@ -877,23 +873,20 @@ public class CloneOrchestrator {
             if (actualWidth == expectedWidth && actualTiles == expectedTiles) {
                 Utils.sleep(800);
                 if (!extension.getFloorState().inRoom()) {
-                    logger.log(Messages.get("floorplan.state_incomplete"), "orange");
+                    logger.logKey("floorplan.state_incomplete", "orange");
                     Utils.sleep(1500);
                 }
-                logger.log(Messages.get("floorplan.verified", actualWidth, planHeight(actualPlan), actualTiles), "green");
+                logger.logKey("floorplan.verified", "green", actualWidth, planHeight(actualPlan), actualTiles);
                 return true;
             }
 
-            logger.log(Messages.get("floorplan.mismatch",
-                    expectedWidth, planHeight(expectedPlan), expectedTiles,
-                    actualWidth, planHeight(actualPlan), actualTiles,
-                    attempt, FLOORPLAN_ATTEMPTS), "orange");
+            logger.logKey("floorplan.mismatch", "orange", expectedWidth, planHeight(expectedPlan), expectedTiles, actualWidth, planHeight(actualPlan), actualTiles, attempt, FLOORPLAN_ATTEMPTS);
             if (attempt < FLOORPLAN_ATTEMPTS) {
                 Utils.sleep(FLOORPLAN_RETRY_WAIT_MS);
             }
         }
 
-        logger.log(Messages.get("floorplan.never_applied"), "red");
+        logger.logKey("floorplan.never_applied", "red");
         return false;
     }
 
@@ -957,26 +950,26 @@ public class CloneOrchestrator {
         announce("stacktile.pickup.start", stackTileId);
 
         if (!stillInRoom(stackTileId)) {
-            logger.log(Messages.get("stacktile.pickup.already_gone"), "green");
+            logger.logKey("stacktile.pickup.already_gone", "green");
             return true;
         }
 
         if (!executor.sendToServer("PickupObject", 2, stackTileId, false)) {
-            logger.log(Messages.get("stacktile.pickup.send_failed"), "orange");
+            logger.logKey("stacktile.pickup.send_failed", "orange");
             return false;
         }
 
         long deadline = System.currentTimeMillis() + 2500;
         while (System.currentTimeMillis() < deadline) {
             if (!stillInRoom(stackTileId)) {
-                logger.log(Messages.get("stacktile.pickup.done"), "green");
+                logger.logKey("stacktile.pickup.done", "green");
                 Utils.sleep(300);
                 return true;
             }
             Utils.sleep(150);
         }
 
-        logger.log(Messages.get("stacktile.pickup.still_present"), "orange");
+        logger.logKey("stacktile.pickup.still_present", "orange");
         Utils.sleep(400);
         return false;
     }
@@ -1033,34 +1026,33 @@ public class CloneOrchestrator {
 
         if (!snapshot.floorPlan.applyTo(executor,
                 snapshot.settings.wallThickness, snapshot.settings.floorThickness)) {
-            logger.log(Messages.get("annex.remove.send_failed"), "orange");
+            logger.logKey("annex.remove.send_failed", "orange");
             return false;
         }
 
         HPacket response = executor.awaitPacket(floorHeightMap);
         if (response == null) {
-            logger.log(Messages.get("annex.remove.no_response"), "orange");
+            logger.logKey("annex.remove.no_response", "orange");
         } else if (!annexStillWalkable(response, annex)) {
             Utils.sleep(600);
-            logger.log(Messages.get("annex.remove.done",
-                    snapshot.floorPlan.doorX, snapshot.floorPlan.doorY, snapshot.floorPlan.doorDir), "green");
+            logger.logKey("annex.remove.done", "green", snapshot.floorPlan.doorX, snapshot.floorPlan.doorY, snapshot.floorPlan.doorDir);
             return true;
         } else {
-            logger.log(Messages.get("annex.remove.rejected"), "orange");
+            logger.logKey("annex.remove.rejected", "orange");
         }
 
         List<String> blockers = annexBlockers(annex);
         if (blockers.isEmpty()) {
-            logger.log(Messages.get("annex.blockers.state_empty"), "orange");
+            logger.logKey("annex.blockers.state_empty", "orange");
         } else {
-            logger.log(Messages.get("annex.blockers.count", blockers.size()), "orange");
+            logger.logKey("annex.blockers.count", "orange", blockers.size());
             for (String blocker : blockers.subList(0, Math.min(blockers.size(), 8))) {
                 logger.log("   " + blocker, "orange");
             }
         }
 
         restoreDoorOnly(snapshot, annex);
-        logger.log(Messages.get("annex.remove.manual_hint"), "orange");
+        logger.logKey("annex.remove.manual_hint", "orange");
         return false;
     }
 
@@ -1078,10 +1070,10 @@ public class CloneOrchestrator {
                 snapshot.floorPlan.writableWallHeight());
 
         if (!sent || executor.awaitPacket(floorHeightMap) == null) {
-            logger.log(Messages.get("annex.door.restore_failed"), "orange");
+            logger.logKey("annex.door.restore_failed", "orange");
             return;
         }
-        logger.log(Messages.get("annex.door.restored"), "green");
+        logger.logKey("annex.door.restored", "green");
     }
 
     private boolean waitForRoomRights() {
@@ -1099,14 +1091,11 @@ public class CloneOrchestrator {
             }
             if (cancelled()) return false;
             if (System.currentTimeMillis() > deadline) {
-                logger.log(Messages.get("room.rights.missing",
-                        inRoom ? "" : Messages.get("room.rights.missing.room_state"),
-                        furni ? "" : Messages.get("room.rights.missing.furni"),
-                        wired ? "" : Messages.get("room.rights.missing.wired")), "red");
+                logger.logKey("room.rights.missing", "red", inRoom ? "" : Messages.get("room.rights.missing.room_state"), furni ? "" : Messages.get("room.rights.missing.furni"), wired ? "" : Messages.get("room.rights.missing.wired"));
                 return false;
             }
             if (!logged) {
-                logger.log(Messages.get("room.rights.waiting"), "blue");
+                logger.logKey("room.rights.waiting", "blue");
                 logged = true;
             }
             Utils.sleep(250);
@@ -1117,11 +1106,11 @@ public class CloneOrchestrator {
         Inventory inventory = extension.getInventory();
 
         if (inventory.getState() == Inventory.InventoryState.LOADED) {
-            logger.log(Messages.get("inventory.already_loaded"), "blue");
+            logger.logKey("inventory.already_loaded", "blue");
             return true;
         }
 
-        logger.log(Messages.get("inventory.loading.long_wait"), "blue");
+        logger.logKey("inventory.loading.long_wait", "blue");
         if (inventory.getState() != Inventory.InventoryState.LOADING) {
             inventory.requestInventory();
         }
@@ -1133,7 +1122,7 @@ public class CloneOrchestrator {
         while (inventory.getState() != Inventory.InventoryState.LOADED) {
             if (cancelled()) return false;
             if (System.currentTimeMillis() > deadline) {
-                logger.log(Messages.get("inventory.timeout"), "red");
+                logger.logKey("inventory.timeout", "red");
                 return false;
             }
             if (System.currentTimeMillis() > nextNote) {
@@ -1144,7 +1133,7 @@ public class CloneOrchestrator {
             Utils.sleep(250);
         }
 
-        logger.log(Messages.get("inventory.loaded.duration", (System.currentTimeMillis() - start) / 1000), "green");
+        logger.logKey("inventory.loaded.duration", "green", (System.currentTimeMillis() - start) / 1000);
         return true;
     }
 
@@ -1191,18 +1180,18 @@ public class CloneOrchestrator {
 
         spot = snapshot.floorPlan.findFlatSquare(dimension, presetFootprints(preset, true));
         if (spot != null) {
-            logger.log(Messages.get("stacktile.spot.will_be_built_on"), "orange");
+            logger.logKey("stacktile.spot.will_be_built_on", "orange");
             return new HPoint(spot[0], spot[1]);
         }
 
         spot = snapshot.floorPlan.findFlatSquare(dimension, null);
         if (spot != null) {
-            logger.log(Messages.get("stacktile.spot.multi_tile_conflict"), "orange");
+            logger.logKey("stacktile.spot.multi_tile_conflict", "orange");
             return new HPoint(spot[0], spot[1]);
         }
 
         if (dimension > 1) {
-            logger.log(Messages.get("stacktile.spot.smaller_area", dimension, dimension), "orange");
+            logger.logKey("stacktile.spot.smaller_area", "orange", dimension, dimension);
             spot = snapshot.floorPlan.findFlatSquare(1, null);
         }
         return spot == null ? null : new HPoint(spot[0], spot[1]);
@@ -1231,7 +1220,7 @@ public class CloneOrchestrator {
             for (int x = 0; x < rows[y].length(); x++) {
                 if (snapshot.floorPlan.isWalkable(x, y) && !key(stackTileLocation.getX(), stackTileLocation.getY())
                         .equals(key(x, y))) {
-                    logger.log(Messages.get("clone.reserved_space.fallback", x, y), "orange");
+                    logger.logKey("clone.reserved_space.fallback", "orange", x, y);
                     return new HPoint(x, y);
                 }
             }
@@ -1259,28 +1248,28 @@ public class CloneOrchestrator {
         while (importer.getState() != GPresetImporter.BuildingImportState.NONE) {
             if (cancelled()) {
                 importer.reset();
-                logger.log(Messages.get("clone.build.cancelled"), "orange");
+                logger.logKey("clone.build.cancelled", "orange");
                 return false;
             }
             GPresetImporter.BuildingImportState current = importer.getState();
             if (current != lastState) {
                 lastState = current;
                 lastProgress = System.currentTimeMillis();
-                logger.log(Messages.get("clone.build.phase", current), "blue");
+                logger.logKey("clone.build.phase", "blue", current);
             }
             if (System.currentTimeMillis() - lastProgress > 10 * 60 * 1000L) {
                 importer.reset();
-                logger.log(Messages.get("clone.build.stuck", current), "red");
+                logger.logKey("clone.build.stuck", "red", current);
                 return false;
             }
             Utils.sleep(250);
         }
 
         if (!importer.lastImportSucceeded()) {
-            logger.log(Messages.get("clone.build.failed"), "red");
+            logger.logKey("clone.build.failed", "red");
             return false;
         }
-        logger.log(Messages.get("clone.build.done"), "green");
+        logger.logKey("clone.build.done", "green");
         return true;
     }
 }

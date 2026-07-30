@@ -828,9 +828,15 @@ public class GPresetExporter {
         return extension.getFloorState().getRoomId() + "-" + id;
     }
 
-    public void clearCache() {
+    public int clearCache() {
         synchronized (lock) {
-            if (state != PresetExportState.FETCHING_UNKNOWN_CONFIGS) {
+            if (state == PresetExportState.FETCHING_UNKNOWN_CONFIGS) {
+                return -1;
+            }
+            int cached = wiredTriggerConfigs.size() + wiredConditionConfigs.size()
+                    + wiredEffectConfigs.size() + wiredSelectorConfigs.size()
+                    + wiredAddonConfigs.size() + wiredVariableConfigs.size();
+            {
                 wiredTriggerConfigs.clear();
                 wiredConditionConfigs.clear();
                 wiredEffectConfigs.clear();
@@ -840,6 +846,7 @@ public class GPresetExporter {
                 hasVariableMap = false;
                 variablesMap = new HashMap<>();
             }
+            return cached;
         }
     }
 }

@@ -87,19 +87,19 @@ public class AvailabilityChecker {
                     .distinct()
                     .collect(Collectors.toList());
 
-            logger.log(Messages.get("inventory.availability.header"), "black");
+            logger.logKey("inventory.availability.header", "black");
             for (String className : allItems) {
                 boolean isMissing = missing.containsKey(className) && missing.get(className) > 0;
                 int totalNeeded = (int)(furniDrops.stream().filter(i -> furniDataTools.getFloorItemName(i.getTypeId()).equals(className)).count());
                 int available = isMissing ? totalNeeded - missing.get(className) : totalNeeded;
 
                 logger.logNoNewline(Messages.get("inventory.availability.item.name", furniDataTools.getFloorItemDetails(className).name), "black");
-                logger.log(Messages.get("inventory.availability.item.count", available, totalNeeded), isMissing ? "red" : "green");
+                logger.logKey("inventory.availability.item.count", isMissing ? "red" : "green", available, totalNeeded);
             }
 
         }
         else {
-            logger.log(Messages.get("inventory.availability.failed"), "red");
+            logger.logKey("inventory.availability.failed", "red");
         }
     }
 

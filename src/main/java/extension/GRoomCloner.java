@@ -64,8 +64,8 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.0.8",
-        Author =  "Sucukdeluxe (based on G-Presets by sirjonasxx, Roboroads, WiredSpast and RoomDuplicator by WiredSpast & Kouris)"
+        Version =  "1.1.0",
+        Author =  "Sucukdeluxe"
 )
 public class GRoomCloner extends ExtensionForm {
 
@@ -108,7 +108,6 @@ public class GRoomCloner extends ExtensionForm {
     public Label postconfigErrorLbl;
     public CheckBox noExportWiredCbx;
     public Slider ratelimiter;
-    public CheckBox onTopCbx;
 
     public Button cloneBtn;
     public Button cloneBuildBtn;
@@ -135,6 +134,7 @@ public class GRoomCloner extends ExtensionForm {
     public Button updatePostconfigBtn;
 
     public Label roomModelLbl;
+    public Label workAnnexHintLbl;
     public Label nameSuffixLbl;
     public Label savedPresetsLbl;
     public Label buildPresetHintLbl;
@@ -183,8 +183,8 @@ public class GRoomCloner extends ExtensionForm {
 
         logger.log(Messages.get("ui.log.title") + " " 
                 + GRoomCloner.class.getAnnotation(ExtensionInfo.class).Version(), "purple");
-        logger.log(Messages.get("clone.hint.start"), "purple");
-        logger.log(Messages.get("ui.log.chatcommands"), "purple");
+        logger.logKey("clone.hint.start", "purple");
+        logger.logKey("ui.log.chatcommands", "purple");
 
         stacktile_tgl.selectedToggleProperty().addListener(observable -> {
             String option = ((RadioButton)(stacktile_tgl.getSelectedToggle())).getText();
@@ -205,6 +205,10 @@ public class GRoomCloner extends ExtensionForm {
 
         allowIncompleteBuildsCbx.selectedProperty().addListener(observable ->
                 SettingsCache.put("allowIncompleteBuilds", allowIncompleteBuildsCbx.isSelected())
+        );
+
+        workAnnexCbx.selectedProperty().addListener(observable ->
+                SettingsCache.put("workAnnex", workAnnexCbx.isSelected())
         );
 
 
@@ -288,7 +292,7 @@ public class GRoomCloner extends ExtensionForm {
         this.floorState = new FloorState(this, logger, this::updateUI, () -> {
             this.updateUI();
             this.exporter.reset();
-            logger.log(Messages.get("room.leaving"), "blue");
+            logger.logKey("room.leaving", "blue");
         });
         this.inventory = new Inventory(this, logger, this::updateUI);
         this.permissions = new RoomPermissions(this, logger, this::updateUI);
@@ -395,15 +399,22 @@ public class GRoomCloner extends ExtensionForm {
         workAnnexCbx.setSelected(cache.optBoolean("workAnnex", true));
 
         boolean onTop = cache.optBoolean("alwaysOnTop", false);
-        onTopCbx.setSelected(onTop);
         onTopCloneCbx.setSelected(onTop);
         applyAlwaysOnTop(onTop);
     }
 
     private void applyAlwaysOnTop(boolean onTop) {
         SettingsCache.put("alwaysOnTop", onTop);
-        if (primaryStage != null) {
-            primaryStage.setAlwaysOnTop(onTop);
+        syncAlwaysOnTop();
+    }
+
+    private void syncAlwaysOnTop() {
+        if (primaryStage == null) {
+            return;
+        }
+        boolean wanted = onTopCloneCbx.isSelected();
+        if (primaryStage.isAlwaysOnTop() != wanted) {
+            primaryStage.setAlwaysOnTop(wanted);
         }
     }
 
@@ -429,7 +440,7 @@ public class GRoomCloner extends ExtensionForm {
         logger.log(String.format("Selected \"%s\" preset", name), "green");
         importer.setPresetConfig(preset);
         HPoint dim = PresetUtils.presetDimensions(preset);
-        logger.log(Messages.get("preset.dimensions", dim.getX(), dim.getY()), "green");
+        logger.logKey("preset.dimensions", "green", dim.getX(), dim.getY());
         updateUI();
     }
 
@@ -443,7 +454,7 @@ public class GRoomCloner extends ExtensionForm {
 
         Thread categories = new Thread(() -> {
             if (FlatCategories.request(executor)) {
-                logger.log(Messages.get("categories.loaded", FlatCategories.selectable().size()), "blue");
+                logger.logKey("categories.loaded", "blue", FlatCategories.selectable().size());
             }
         }, "flat-categories");
         categories.setDaemon(true);
@@ -502,6 +513,7 @@ public class GRoomCloner extends ExtensionForm {
 
     private void updateUI() {
         Platform.runLater(() -> {
+            syncAlwaysOnTop();
             updateLabel(cndConnectedLbl, isConnected);
             updateLabel(cndRoomLbl, floorState.inRoom());
             updateLabel(cndFurnidataLbl, furniDataReady());
@@ -582,10 +594,10 @@ public class GRoomCloner extends ExtensionForm {
         }
         String target = input.getText().trim();
         if (PresetConfigUtils.renamePreset(selected, target)) {
-            logger.log(Messages.get("preset.rename.done", selected, target), "green");
+            logger.logKey("preset.rename.done", "green", selected, target);
             updateInstalledPresets();
         } else {
-            logger.log(Messages.get("preset.rename.failed", selected), "red");
+            logger.logKey("preset.rename.failed", "red", selected);
         }
     }
 
@@ -610,10 +622,10 @@ public class GRoomCloner extends ExtensionForm {
             return;
         }
         if (PresetConfigUtils.deletePreset(selected)) {
-            logger.log(Messages.get("preset.delete.done", selected), "green");
+            logger.logKey("preset.delete.done", "green", selected);
             updateInstalledPresets();
         } else {
-            logger.log(Messages.get("preset.delete.failed", selected), "red");
+            logger.logKey("preset.delete.failed", "red", selected);
         }
     }
 
@@ -629,7 +641,7 @@ public class GRoomCloner extends ExtensionForm {
             try {
                 root = new JSONObject(new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8));
             } catch (Throwable t) {
-                logger.log(Messages.get("preset.editor.unreadable", file.getName(), t), "red");
+                logger.logKey("preset.editor.unreadable", "red", file.getName(), t);
                 return;
             }
         }
@@ -648,9 +660,9 @@ public class GRoomCloner extends ExtensionForm {
                 Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             writer.write(root.toString(4));
             writer.flush();
-            logger.log(Messages.get("preset.editor.saved", selected), "green");
+            logger.logKey("preset.editor.saved", "green", selected);
         } catch (IOException e) {
-            logger.log(Messages.get("preset.editor.save_failed", e), "red");
+            logger.logKey("preset.editor.save_failed", "red", e);
         }
     }
 
@@ -679,7 +691,7 @@ public class GRoomCloner extends ExtensionForm {
 
     public void reloadRoomClick(ActionEvent actionEvent) {
         if (cloneOrchestrator == null || cloneOrchestrator.isRunning()) {
-            logger.log(Messages.get("clone.already_running"), "red");
+            logger.logKey("clone.already_running", "red");
             return;
         }
         cloneOrchestrator.reloadCurrentRoom();
@@ -741,12 +753,12 @@ public class GRoomCloner extends ExtensionForm {
 
     private void startClone(boolean buildAfterExport) {
         if (cloneOrchestrator.isRunning()) {
-            logger.log(Messages.get("clone.already_running"), "red");
+            logger.logKey("clone.already_running", "red");
             return;
         }
         if (exporter.getState() != GPresetExporter.PresetExportState.NONE
                 || importer.getState() != GPresetImporter.BuildingImportState.NONE) {
-            logger.log(Messages.get("clone.finish_pending_first"), "red");
+            logger.logKey("clone.finish_pending_first", "red");
             return;
         }
 
@@ -779,31 +791,31 @@ public class GRoomCloner extends ExtensionForm {
     public void buildSelectedPresetClick(ActionEvent actionEvent) {
         String presetName = presetListView.getSelectionModel().getSelectedItem();
         if (presetName == null) {
-            logger.log(Messages.get("preset.none_selected"), "red");
+            logger.logKey("preset.none_selected", "red");
             return;
         }
         PresetConfig preset = PresetConfigUtils.loadPreset(presetName);
         if (preset == null) {
-            logger.log(Messages.get("preset.load_failed.named", presetName), "red");
+            logger.logKey("preset.load_failed.named", "red", presetName);
             return;
         }
         selectPreset(preset, presetName);
-        logger.log(Messages.get("preset.hint.build_command"), "purple");
+        logger.logKey("preset.hint.build_command", "purple");
     }
 
     public void presetToNewRoomClick(ActionEvent actionEvent) {
         String presetName = presetListView.getSelectionModel().getSelectedItem();
         if (presetName == null) {
-            logger.log(Messages.get("preset.none_selected"), "red");
+            logger.logKey("preset.none_selected", "red");
             return;
         }
         if (cloneOrchestrator.isRunning()) {
-            logger.log(Messages.get("clone.already_running"), "red");
+            logger.logKey("clone.already_running", "red");
             return;
         }
         if (exporter.getState() != GPresetExporter.PresetExportState.NONE
                 || importer.getState() != GPresetImporter.BuildingImportState.NONE) {
-            logger.log(Messages.get("clone.finish_pending_first"), "red");
+            logger.logKey("clone.finish_pending_first", "red");
             return;
         }
 
@@ -842,6 +854,7 @@ public class GRoomCloner extends ExtensionForm {
         nameSuffixLbl.setText(Messages.get("ui.label.namesuffix"));
         copyWallItemsCbx.setText(Messages.get("ui.checkbox.copywallitems"));
         workAnnexCbx.setText(Messages.get("ui.checkbox.workannex"));
+        workAnnexHintLbl.setText(Messages.get("ui.hint.workannex"));
 
         savedPresetsLbl.setText(Messages.get("ui.label.savedpresets"));
         availabilityBtn.setText(Messages.get("ui.button.checkavailability"));
@@ -867,12 +880,13 @@ public class GRoomCloner extends ExtensionForm {
         onlyBcCbx.setText(Messages.get("ui.radio.onlybc"));
         ratelimitLbl.setText(Messages.get("ui.label.ratelimit"));
         languageLbl.setText(Messages.get("ui.label.language"));
+        langEn.setText(Messages.get("ui.language.en"));
+        langDe.setText(Messages.get("ui.language.de"));
         donateLabel.setText(Messages.get("ui.label.selfdonate"));
         donateMissing.setText(Messages.get("ui.radio.donatemissing"));
         donateAll.setText(Messages.get("ui.radio.donateall"));
         noExportWiredCbx.setText(Messages.get("ui.checkbox.noexportwired"));
         allowIncompleteBuildsCbx.setText(Messages.get("ui.checkbox.allowincomplete"));
-        onTopCbx.setText(Messages.get("ui.checkbox.alwaysontop"));
 
         updatePostconfigBtn.setText(Messages.get("ui.button.update"));
         furniNameLbl.setText(Messages.get("ui.label.furniname"));
@@ -917,7 +931,10 @@ public class GRoomCloner extends ExtensionForm {
             }
         });
 
-        Messages.onLanguageChange(() -> Platform.runLater(this::applyTexts));
+        Messages.onLanguageChange(() -> Platform.runLater(() -> {
+            applyTexts();
+            logger.retranslate();
+        }));
     }
 
     private void setCloneStatus(String text) {
@@ -961,18 +978,18 @@ public class GRoomCloner extends ExtensionForm {
             AvailabilityChecker.printAvailability(logger, fakeDropInfo, inventory, furniDataTools);
         }
         else {
-            logger.log(Messages.get("preset.availability.not_ready"), "red");
+            logger.logKey("preset.availability.not_ready", "red");
         }
 
     }
 
     public void selfDonateBtnClick(ActionEvent actionEvent) {
         if (exporter.getState() != GPresetExporter.PresetExportState.NONE) {
-            logger.log(Messages.get("preset.donate.busy.export"), "red");
+            logger.logKey("preset.donate.busy.export", "red");
             return;
         }
         if (importer.getState() != GPresetImporter.BuildingImportState.NONE) {
-            logger.log(Messages.get("preset.donate.busy.import"), "red");
+            logger.logKey("preset.donate.busy.import", "red");
             return;
         }
 
@@ -997,12 +1014,42 @@ public class GRoomCloner extends ExtensionForm {
 
     public void openCurrentPresetClick(ActionEvent actionEvent) {
         String selectedPreset = presetListView.getSelectionModel().getSelectedItem();
-        if (selectedPreset != null) {
+        if (selectedPreset == null) {
+            logger.logKey("preset.none_selected", "red");
+            return;
+        }
+
+        File file = new File(PresetConfigUtils.presetPath(), selectedPreset + PresetConfigUtils.PRESET_EXT);
+        if (!file.isFile()) {
+            logger.logKey("preset.file_missing", "red", file.getName());
+            return;
+        }
+
+        if (!Desktop.isDesktopSupported()) {
+            logger.logKey("preset.open.unsupported", "orange", file.getParent());
+            return;
+        }
+
+        Desktop desktop = Desktop.getDesktop();
+        if (desktop.isSupported(Desktop.Action.EDIT)) {
             try {
-                Desktop.getDesktop().edit(new File(PresetConfigUtils.presetPath(), selectedPreset + PresetConfigUtils.PRESET_EXT));
-            } catch (IOException e) {
-                e.printStackTrace();
+                desktop.edit(file);
+                return;
+            } catch (Throwable ignored) {
             }
+        }
+        if (desktop.isSupported(Desktop.Action.OPEN)) {
+            try {
+                desktop.open(file);
+                return;
+            } catch (Throwable ignored) {
+            }
+        }
+        try {
+            desktop.open(file.getParentFile());
+            logger.logKey("preset.open.folder_instead", "orange", file.getName());
+        } catch (Throwable t) {
+            logger.logKey("preset.open.failed", "red", file.getAbsolutePath());
         }
     }
 
@@ -1056,19 +1103,16 @@ public class GRoomCloner extends ExtensionForm {
         return importer;
     }
 
-    public void alwaysOnTopClick(ActionEvent actionEvent) {
-        boolean onTop = onTopCbx.isSelected();
-        onTopCloneCbx.setSelected(onTop);
-        applyAlwaysOnTop(onTop);
-    }
-
     public void alwaysOnTopCloneClick(ActionEvent actionEvent) {
-        boolean onTop = onTopCloneCbx.isSelected();
-        onTopCbx.setSelected(onTop);
-        applyAlwaysOnTop(onTop);
+        applyAlwaysOnTop(onTopCloneCbx.isSelected());
     }
 
     public void clearWiredClick(ActionEvent actionEvent) {
-        exporter.clearCache();
+        int cleared = exporter.clearCache();
+        if (cleared < 0) {
+            logger.logKey("wired.cache.busy", "orange");
+        } else {
+            logger.logKey("wired.cache.cleared", "green", cleared);
+        }
     }
 }

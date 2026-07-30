@@ -11,7 +11,8 @@ public class GRoomClonerLauncher extends ThemedExtensionFormCreator {
 
     @Override
     protected String getTitle() {
-        return "G-PresetsPlus - " + GRoomCloner.class.getAnnotation(ExtensionInfo.class).Version();
+        return "G-PresetsPlus - Building & Wired Presets - "
+                + GRoomCloner.class.getAnnotation(ExtensionInfo.class).Version();
     }
 
     @Override

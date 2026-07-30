@@ -82,7 +82,7 @@ public class WallItemsSnapshot {
 
         for (WallItem item : wallItems) {
             if (!keepRunning.getAsBoolean()) {
-                logger.log(Messages.get("wallitems.aborted"), "orange");
+                logger.logKey("wallitems.aborted", "orange");
                 return placed;
             }
             if (item.className == null) {
@@ -91,7 +91,7 @@ public class WallItemsSnapshot {
             }
             Integer typeId = furniData.getWallTypeId(item.className);
             if (typeId == null) {
-                logger.log(Messages.get("wallitems.not_in_furnidata", item.className), "orange");
+                logger.logKey("wallitems.not_in_furnidata", "orange", item.className);
                 skipped++;
                 continue;
             }
@@ -100,7 +100,7 @@ public class WallItemsSnapshot {
             }
             HInventoryItem inventoryItem = byType.get(typeId).pollFirst();
             if (inventoryItem == null) {
-                logger.log(Messages.get("wallitems.not_in_inventory", item.className), "orange");
+                logger.logKey("wallitems.not_in_inventory", "orange", item.className);
                 skipped++;
                 continue;
             }
@@ -111,15 +111,15 @@ public class WallItemsSnapshot {
                 lastKnownStates.put(inventoryItem.getId(), readState(added));
                 applyState(executor, inventoryItem.getId(), item.state);
             } else {
-                logger.log(Messages.get("wallitems.place_failed", item.className), "orange");
+                logger.logKey("wallitems.place_failed", "orange", item.className);
                 skipped++;
             }
         }
 
         if (skipped > 0) {
-            logger.log(Messages.get("wallitems.summary_with_skipped", placed, skipped), "orange");
+            logger.logKey("wallitems.summary_with_skipped", "orange", placed, skipped);
         } else {
-            logger.log(Messages.get("wallitems.summary", placed), "green");
+            logger.logKey("wallitems.summary", "green", placed);
         }
         return placed;
     }
