@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.1.0",
+        Version =  "1.1.1",
         Author =  "Sucukdeluxe"
 )
 public class GRoomCloner extends ExtensionForm {
@@ -323,7 +323,9 @@ public class GRoomCloner extends ExtensionForm {
             }
         });
 
-        this.floorState.requestRoom(this);
+        if (isConnected) {
+            this.floorState.requestRoom(this);
+        }
         updateUI();
         updateInstalledPresets();
 
@@ -408,6 +410,28 @@ public class GRoomCloner extends ExtensionForm {
         syncAlwaysOnTop();
     }
 
+    private final java.util.concurrent.atomic.AtomicBoolean categoriesRequested =
+            new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    private void maybeLoadCategories() {
+        if (!isConnected || floorState == null || !floorState.inRoom() || !FlatCategories.isEmpty()) {
+            return;
+        }
+        if (!categoriesRequested.compareAndSet(false, true)) {
+            return;
+        }
+
+        Thread categories = new Thread(() -> {
+            if (FlatCategories.request(executor)) {
+                logger.logKey("categories.loaded", "blue", FlatCategories.selectable().size());
+            } else {
+                categoriesRequested.set(false);
+            }
+        }, "flat-categories");
+        categories.setDaemon(true);
+        categories.start();
+    }
+
     private void syncAlwaysOnTop() {
         if (primaryStage == null) {
             return;
@@ -451,19 +475,13 @@ public class GRoomCloner extends ExtensionForm {
 
         isConnected = true;
         updateUI();
-
-        Thread categories = new Thread(() -> {
-            if (FlatCategories.request(executor)) {
-                logger.logKey("categories.loaded", "blue", FlatCategories.selectable().size());
-            }
-        }, "flat-categories");
-        categories.setDaemon(true);
-        categories.start();
     }
 
     @Override
     public void onEndConnection() {
         isConnected = false;
+        FlatCategories.clear();
+        categoriesRequested.set(false);
         if (cloneOrchestrator != null) {
             cloneOrchestrator.cancel();
         }
@@ -512,6 +530,7 @@ public class GRoomCloner extends ExtensionForm {
     }
 
     private void updateUI() {
+        maybeLoadCategories();
         Platform.runLater(() -> {
             syncAlwaysOnTop();
             updateLabel(cndConnectedLbl, isConnected);
