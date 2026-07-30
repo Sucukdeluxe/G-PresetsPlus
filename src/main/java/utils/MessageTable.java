@@ -286,6 +286,18 @@ class MessageTable {
         Messages.put("settings.full_read",
                 "Full room settings read (flood %s, idle %s/%s, rights %s/%s/%s)",
                 "Vollstaendige Raum-Settings gelesen (Flood %s, Idle %s/%s, Rechte %s/%s/%s)");
+        Messages.put("settings.name_fallback",
+                "The name \"%s\" did not take. Trying the plain room name \"%s\" without the suffix",
+                "Der Name \"%s\" ist nicht angekommen. Versuche den reinen Raumnamen \"%s\" ohne Zusatz");
+        Messages.put("settings.name_fallback_ok",
+                "The room is called \"%s\" now - without the suffix, but named",
+                "Der Raum heisst jetzt \"%s\" - ohne Zusatz, aber benannt");
+        Messages.put("settings.name_fallback_failed",
+                "Even the plain room name did not take - the room keeps its creation name",
+                "Auch der reine Raumname ist nicht angekommen - der Raum behaelt seinen Erstell-Namen");
+        Messages.put("preset.name.numbered",
+                "A preset called \"%s\" already exists, saving as \"%s\"",
+                "Ein Preset namens \"%s\" gibt es schon, speichere als \"%s\"");
         Messages.put("settings.verify.all_ok",
                 "Verified by readback: \"%s\" - every transferred field matches the source",
                 "Per Rueckleseprobe bestaetigt: \"%s\" - alle uebertragenen Felder stimmen mit der Quelle");
@@ -537,6 +549,15 @@ class MessageTable {
         Messages.put("clone.status.running",
                 "Running...",
                 "L\u00e4uft...");
+        Messages.put("floorplan.verified",
+                "Floor plan verified: the room really is %sx%s with %s walkable tiles",
+                "Floorplan geprueft: der Raum ist wirklich %sx%s mit %s begehbaren Kacheln");
+        Messages.put("floorplan.mismatch",
+                "The server kept a different floor plan - sent %sx%s with %s tiles, room has %sx%s with %s. Retrying (%s/%s)",
+                "Der Server behielt einen anderen Floorplan - gesendet %sx%s mit %s Kacheln, Raum hat %sx%s mit %s. Neuer Versuch (%s/%s)");
+        Messages.put("floorplan.never_applied",
+                "The floor plan was not applied. Without it the room keeps its creation layout and furni cannot be placed on tiles that do not exist",
+                "Der Floorplan wurde nicht uebernommen. Ohne ihn behaelt der Raum sein Erstell-Layout, und Moebel koennen nicht auf Kacheln gesetzt werden, die es nicht gibt");
         Messages.put("floorplan.applied",
                 "Floor plan applied",
                 "Floorplan \u00fcbernommen");
@@ -984,6 +1005,12 @@ class MessageTable {
         Messages.put("stacktile.pickup.still_present",
                 "The room state still reports the stack tile as present - the annex teardown decides whether it is really gone",
                 "Der Raum-State meldet das Stacktile noch als vorhanden - der Abriss entscheidet, ob es wirklich weg ist");
+        Messages.put("stacktile.helpers_placed",
+                "%s smaller stack tile(s) placed as well, so furni also fit into tight gaps",
+                "%s kleinere Stapelfelder zusaetzlich gesetzt, damit Moebel auch in enge Luecken passen");
+        Messages.put("stacktile.helper_unavailable",
+                "No %s stack tile available - tight gaps may stay empty",
+                "Kein %s Stapelfeld verfuegbar - enge Luecken bleiben moeglicherweise leer");
         Messages.put("stacktile.placed",
                 "Stack tile is in the room (ID %d)",
                 "Stacktile liegt im Raum (ID %d)");

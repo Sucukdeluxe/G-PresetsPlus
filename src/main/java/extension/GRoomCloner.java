@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.0.1",
+        Version =  "1.0.8",
         Author =  "Sucukdeluxe (based on G-Presets by sirjonasxx, Roboroads, WiredSpast and RoomDuplicator by WiredSpast & Kouris)"
 )
 public class GRoomCloner extends ExtensionForm {
@@ -354,6 +354,9 @@ public class GRoomCloner extends ExtensionForm {
     private void loadCache() {
         JSONObject cache = SettingsCache.getCacheContents();
 
+        Messages.setLanguage(Messages.Language.fromName(
+                cache.optString("language", "EN"), Messages.Language.EN));
+
         String stackTileKey = cache.optString("stacktile", "2x2");
         stackTileSetting = StackTileSetting.fromString(stackTileKey);
         stacktile_tgl.getToggles()
@@ -386,7 +389,8 @@ public class GRoomCloner extends ExtensionForm {
         allowIncompleteBuildsCbx.setSelected(cache.optBoolean("allowIncompleteBuilds"));
 
         roomModel_txt.setText(cache.optString("roomModel", "model_a"));
-        nameSuffix_txt.setText(cache.optString("nameSuffix", " (Kopie)"));
+        nameSuffix_txt.setText(cache.optString("nameSuffix",
+                Messages.get("settings.namesuffix.default")));
         copyWallItemsCbx.setSelected(cache.optBoolean("copyWallItems", true));
         workAnnexCbx.setSelected(cache.optBoolean("workAnnex", true));
 
@@ -902,8 +906,15 @@ public class GRoomCloner extends ExtensionForm {
             Object data = lang_tgl.getSelectedToggle() == null
                     ? null : lang_tgl.getSelectedToggle().getUserData();
             Messages.Language chosen = Messages.Language.fromName((String) data, Messages.Language.EN);
+            String previousDefault = Messages.get("settings.namesuffix.default");
             SettingsCache.put("language", chosen.name());
             Messages.setLanguage(chosen);
+
+            if (previousDefault.equals(nameSuffix_txt.getText())) {
+                String followed = Messages.get("settings.namesuffix.default");
+                nameSuffix_txt.setText(followed);
+                SettingsCache.put("nameSuffix", followed);
+            }
         });
 
         Messages.onLanguageChange(() -> Platform.runLater(this::applyTexts));

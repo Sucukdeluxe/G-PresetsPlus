@@ -12,6 +12,8 @@ It merges two existing extensions: [G-Presets](https://github.com/sirjonasxx/G-P
 - **Copy room + build** — the same, then creates a room, enters it, writes the floor plan and settings, and rebuilds everything including wired.
 - **Create room + build** on the Presets tab — takes any saved preset, creates a room with the original floor plan and settings, and builds it there.
 - **Preset editor** — the room settings of a preset in Habbo's own tab layout (Basic / Access / HC / ModTools). Room categories are read live from the server, not hard-coded.
+- Presets are named after the room; a second copy of the same room becomes `Room (1)`, then `Room (2)`.
+- Smaller stack tiles are placed alongside the configured one, so furni also fit into gaps the main tile cannot reach. The 1x1 goes on top of the 2x2.
 - Rename and delete presets from inside the extension; both files of a preset (`.json` and `.roomJson`) are always handled together.
 - English and German, switchable at runtime in the Settings tab.
 - Chat commands from G-Presets still work: `:ep [all]`, `:ip [x,y]`, `:abort`.
@@ -52,6 +54,7 @@ These were measured against the live server, and they are the reason the clone w
 - **Floor plans have a door rule.** The first row and the first column may contain at most one walkable tile. A plain rectangle of walkable tiles is rejected with *"Invalid door setup"*, and a plan of only `x` with *"matrix contains only 'x' characters"*.
 - **The room password is in no readable packet.** A clone can therefore never carry it over. A room whose door mode is *password* is created as *open* unless you set a password in the preset editor yourself.
 - Door modes are `0` open, `1` doorbell, `2` password, `3` invisible — note that this is **not** the order the client dialog lists them in.
+- **A `FloorHeightMap` arrives when you enter a room, not only when a floor plan is written.** Treating any incoming heightmap as confirmation reports success for a write that never landed, and the build then places furni on tiles that do not exist. The received plan is compared against the sent one by width, height and walkable tile count.
 
 ## Building
 

@@ -17,6 +17,8 @@ public class WorkAnnex {
     private final int doorDir;
     private final HPoint stackTileSpot;
     private final HPoint reservedSpot;
+    private HPoint mediumStackSpot;
+    private HPoint smallStackSpot;
     private final Set<Long> annexTiles = new HashSet<>();
     private final int width;
     private final int height;
@@ -57,6 +59,14 @@ public class WorkAnnex {
 
     public HPoint getReservedSpot() {
         return reservedSpot;
+    }
+
+    public HPoint getMediumStackSpot() {
+        return mediumStackSpot;
+    }
+
+    public HPoint getSmallStackSpot() {
+        return smallStackSpot;
     }
 
     public Set<Long> getAnnexTiles() {
@@ -180,6 +190,8 @@ public class WorkAnnex {
         WorkAnnex annex = new WorkAnnex(planBuilder.toString(),
                 annexX, annexY, source.doorDir,
                 stackSpot, reserved, tiles, newWidth, newHeight);
+        annex.mediumStackSpot = new HPoint(annexX + Math.max(1, stackTileDimension), annexY + 1);
+        annex.smallStackSpot = new HPoint(annexX + Math.max(1, stackTileDimension), annexY + 3);
         annex.annexSide = side;
         annex.annexOriginX = annexX;
         annex.annexOriginY = annexY;

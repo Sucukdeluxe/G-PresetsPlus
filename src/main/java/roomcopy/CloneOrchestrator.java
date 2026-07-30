@@ -5,6 +5,7 @@ import extension.GRoomCloner;
 import extension.logger.Logger;
 import extension.tools.GPresetImporter;
 import extension.tools.PresetUtils;
+import extension.tools.StackTileSetting;
 import extension.tools.presetconfig.PresetConfig;
 import extension.tools.presetconfig.PresetConfigUtils;
 import extension.tools.presetconfig.furni.PresetFurni;
@@ -234,7 +235,7 @@ public class CloneOrchestrator {
         if (!waitForRoomRights()) return false;
 
         if (storedSettings != null) {
-            applyRoomSettings(snapshot, storedSettings, created.roomId, newName);
+            applyRoomSettings(snapshot, storedSettings, created.roomId, newName, baseName);
             if (cancelled()) return false;
         }
         if (!ensureInventory()) return false;
@@ -263,8 +264,15 @@ public class CloneOrchestrator {
         }
         if (cancelled()) return false;
 
+        List<Integer> helperStackTiles = placeSmallerStackTiles(annex);
+        if (cancelled()) return false;
+
         if (!buildPreset(preset, reservedSpace, 0, stackTileLocation, presetRoot)) {
             return false;
+        }
+
+        for (Integer helper : helperStackTiles) {
+            pickUpStackTile(helper);
         }
 
         boolean cleanedUp = false;
@@ -279,6 +287,44 @@ public class CloneOrchestrator {
             logger.log(Messages.get("clone.cleanup_incomplete"), "orange");
         }
         return true;
+    }
+
+    private List<Integer> placeSmallerStackTiles(WorkAnnex annex) {
+        List<Integer> placed = new ArrayList<>();
+        if (annex == null) {
+            return placed;
+        }
+
+        int mainDimension = extension.getStackTileSetting().getDimension();
+        if (mainDimension <= 1) {
+            return placed;
+        }
+
+        HPoint mediumSpot = annex.getMediumStackSpot();
+        addHelperStackTile(placed, StackTileSetting.Large, mainDimension, mediumSpot);
+
+        HPoint smallSpot = mainDimension > 2 ? mediumSpot : annex.getStackTileSpot();
+        addHelperStackTile(placed, StackTileSetting.Small, mainDimension, smallSpot);
+
+        if (!placed.isEmpty()) {
+            logger.log(Messages.get("stacktile.helpers_placed", placed.size()), "green");
+        }
+        return placed;
+    }
+
+    private void addHelperStackTile(List<Integer> placed, StackTileSetting setting,
+                                    int mainDimension, HPoint spot) {
+        if (setting.getDimension() >= mainDimension || spot == null) {
+            return;
+        }
+        int id = stackTileBootstrap.ensureStackTile(setting,
+                extension.getItemSource(), extension.getFloorState(), extension.getInventory(),
+                extension.getFurniDataTools(), spot);
+        if (id > 0) {
+            placed.add(id);
+        } else if (id == StackTileBootstrap.FAILED) {
+            logger.log(Messages.get("stacktile.helper_unavailable", setting.toString()), "orange");
+        }
     }
 
     private boolean cancelled() {
@@ -425,7 +471,7 @@ public class CloneOrchestrator {
         }
         if (cancelled()) return false;
 
-        if (!applyRoomSettings(snapshot, sourceSettings, created.roomId, newName)) {
+        if (!applyRoomSettings(snapshot, sourceSettings, created.roomId, newName, snapshot.settings.name)) {
             return false;
         }
         if (cancelled()) return false;
@@ -461,6 +507,9 @@ public class CloneOrchestrator {
         }
         if (cancelled()) return false;
 
+        List<Integer> helperStackTiles = placeSmallerStackTiles(annex);
+        if (cancelled()) return false;
+
         int targetHeightOffset = PresetUtils.lowestFloorPoint(extension.getFloorState(),
                 new HPoint(0, 0), new HPoint(ROOM_SCAN_SIZE, ROOM_SCAN_SIZE));
         if (targetHeightOffset != sourceHeightOffset) {
@@ -469,6 +518,10 @@ public class CloneOrchestrator {
 
         if (!buildPreset(preset, reservedSpace, sourceHeightOffset, stackTileLocation, new HPoint(0, 0))) {
             return false;
+        }
+
+        for (Integer helper : helperStackTiles) {
+            pickUpStackTile(helper);
         }
 
         boolean cleanedUp = false;
@@ -510,7 +563,34 @@ public class CloneOrchestrator {
         if (base.isEmpty()) {
             base = Messages.get("preset.name.fallback");
         }
-        return String.format("clone_%d_%s", settings.id, base);
+        return uniquePresetName(base);
+    }
+
+    private String uniquePresetName(String base) {
+        String chosen = numberedName(base, CloneOrchestrator::presetNameTaken);
+        if (!chosen.equals(base)) {
+            logger.log(Messages.get("preset.name.numbered", base, chosen), "blue");
+        }
+        return chosen;
+    }
+
+    static String numberedName(String base, java.util.function.Predicate<String> taken) {
+        if (!taken.test(base)) {
+            return base;
+        }
+        for (int copy = 1; copy <= 999; copy++) {
+            String candidate = base + " (" + copy + ")";
+            if (!taken.test(candidate)) {
+                return candidate;
+            }
+        }
+        return base;
+    }
+
+    private static boolean presetNameTaken(String name) {
+        File dir = new File(PresetConfigUtils.presetPath());
+        return new File(dir, name + PresetConfigUtils.PRESET_EXT).isFile()
+                || new File(dir, name + PresetConfigUtils.ROOM_EXT).isFile();
     }
 
     private boolean exportPreset(String presetName) {
@@ -581,6 +661,11 @@ public class CloneOrchestrator {
 
     private boolean applyRoomSettings(RoomSnapshot snapshot, RoomSettingsFull sourceSettings, int newRoomId,
                                       String nameOverride) {
+        return applyRoomSettings(snapshot, sourceSettings, newRoomId, nameOverride, null);
+    }
+
+    private boolean applyRoomSettings(RoomSnapshot snapshot, RoomSettingsFull sourceSettings, int newRoomId,
+                                      String nameOverride, String fallbackName) {
         if (nameOverride != null) {
             logger.log(Messages.get("settings.rename", nameOverride), "blue");
         }
@@ -616,13 +701,11 @@ public class CloneOrchestrator {
         executor.awaitPacket(saved, error);
         if (error.getPacket() != null) {
             logger.log(Messages.get("settings.rejected", error.getPacket().toExpression()), "orange");
-            verifyRoomSettings(newRoomId, nameOverride == null ? snapshot.settings.name : nameOverride, sourceSettings);
-            return true;
+            return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
         }
         if (saved.getPacket() != null) {
             logger.log(Messages.get("settings.applied"), "green");
-            verifyRoomSettings(newRoomId, nameOverride == null ? snapshot.settings.name : nameOverride, sourceSettings);
-            return true;
+            return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
         }
 
         logger.log(Messages.get("settings.debug.sent", executor.lastSentDescription()), "gray");
@@ -653,15 +736,48 @@ public class CloneOrchestrator {
         } else {
             logger.log(Messages.get("settings.no_confirmation"), "orange");
         }
-        verifyRoomSettings(newRoomId, nameOverride == null ? snapshot.settings.name : nameOverride, sourceSettings);
+        return finishSettings(snapshot, sourceSettings, newRoomId, nameOverride, fallbackName, lockType);
+    }
+
+    private boolean finishSettings(RoomSnapshot snapshot, RoomSettingsFull sourceSettings, int newRoomId,
+                                   String nameOverride, String fallbackName, int lockType) {
+        String expectedName = nameOverride == null ? snapshot.settings.name : nameOverride;
+        if (verifyRoomSettings(newRoomId, expectedName, sourceSettings)) {
+            return true;
+        }
+        if (fallbackName == null || fallbackName.trim().isEmpty() || fallbackName.equals(expectedName)) {
+            return true;
+        }
+
+        logger.log(Messages.get("settings.name_fallback", expectedName, fallbackName), "orange");
+        Utils.sleep(1500);
+
+        Executor.AwaitingPacket saved =
+                new Executor.AwaitingPacket("RoomSettingsSaved", HMessage.Direction.TOCLIENT, 10000);
+        Executor.AwaitingPacket error =
+                new Executor.AwaitingPacket("RoomSettingsSaveError", HMessage.Direction.TOCLIENT, 10000);
+        executor.register(saved, error);
+
+        if (sourceSettings != null) {
+            sourceSettings.applyTo(executor, newRoomId, null, lockType, fallbackName);
+        } else {
+            snapshot.settings.applyTo(executor, newRoomId, null, lockType, fallbackName);
+        }
+        executor.awaitPacket(saved, error);
+
+        if (verifyRoomSettings(newRoomId, fallbackName, sourceSettings)) {
+            logger.log(Messages.get("settings.name_fallback_ok", fallbackName), "green");
+        } else {
+            logger.log(Messages.get("settings.name_fallback_failed"), "red");
+        }
         return true;
     }
 
-    private void verifyRoomSettings(int roomId, String expectedName, RoomSettingsFull expected) {
+    private boolean verifyRoomSettings(int roomId, String expectedName, RoomSettingsFull expected) {
         RoomSettingsFull check = RoomSettingsFull.request(executor, logger, roomId, true);
         if (check == null) {
             logger.log(Messages.get("settings.verify.unreadable", roomId), "orange");
-            return;
+            return true;
         }
 
         List<String> diffs = new ArrayList<>();
@@ -690,14 +806,16 @@ public class CloneOrchestrator {
             addDiff(diffs, "tags", expected.tags.size(), check.tags.size());
         }
 
+        boolean nameMatches = expectedName == null || expectedName.equals(check.name);
         if (diffs.isEmpty()) {
             logger.log(Messages.get("settings.verify.all_ok", check.name), "green");
-            return;
+            return true;
         }
         logger.log(Messages.get("settings.verify.diff_count", diffs.size()), "red");
         for (String diff : diffs) {
             logger.log("   " + diff, "orange");
         }
+        return nameMatches;
     }
 
     private static void addDiff(List<String> diffs, String field, Object expected, Object actual) {
@@ -725,37 +843,107 @@ public class CloneOrchestrator {
             logger.log(Messages.get("annex.purpose"), "blue");
         }
 
-        Executor.AwaitingPacket floorHeightMap =
-                new Executor.AwaitingPacket("FloorHeightMap", HMessage.Direction.TOCLIENT, 20000);
-        Executor.AwaitingPacket objects =
-                new Executor.AwaitingPacket("Objects", HMessage.Direction.TOCLIENT, 20000);
-        executor.register(floorHeightMap, objects);
+        String expectedPlan = annex != null ? annex.getPlan() : snapshot.floorPlan.floorPlan;
+        int expectedWidth = planWidth(expectedPlan);
+        int expectedTiles = walkableTiles(expectedPlan);
 
-        boolean sent = annex != null
-                ? annex.applyTo(executor, snapshot.settings.wallThickness, snapshot.settings.floorThickness,
-                        snapshot.floorPlan.wallHeight)
-                : snapshot.floorPlan.applyTo(executor,
-                        snapshot.settings.wallThickness, snapshot.settings.floorThickness);
+        for (int attempt = 1; attempt <= FLOORPLAN_ATTEMPTS; attempt++) {
+            Executor.AwaitingPacket floorHeightMap =
+                    new Executor.AwaitingPacket("FloorHeightMap", HMessage.Direction.TOCLIENT, 20000);
+            Executor.AwaitingPacket objects =
+                    new Executor.AwaitingPacket("Objects", HMessage.Direction.TOCLIENT, 20000);
+            executor.register(floorHeightMap, objects);
 
-        if (!sent) {
-            logger.log(Messages.get("floorplan.send_failed"), "red");
-            return false;
+            boolean sent = annex != null
+                    ? annex.applyTo(executor, snapshot.settings.wallThickness, snapshot.settings.floorThickness,
+                            snapshot.floorPlan.wallHeight)
+                    : snapshot.floorPlan.applyTo(executor,
+                            snapshot.settings.wallThickness, snapshot.settings.floorThickness);
+
+            if (!sent) {
+                logger.log(Messages.get("floorplan.send_failed"), "red");
+                return false;
+            }
+
+            executor.awaitPacketList(floorHeightMap, objects);
+            if (floorHeightMap.getPacket() == null) {
+                logger.log(Messages.get("floorplan.not_confirmed", roomModel), "red");
+                return false;
+            }
+
+            String actualPlan = readHeightMapPlan(floorHeightMap.getPacket());
+            int actualWidth = planWidth(actualPlan);
+            int actualTiles = walkableTiles(actualPlan);
+            if (actualWidth == expectedWidth && actualTiles == expectedTiles) {
+                Utils.sleep(800);
+                if (!extension.getFloorState().inRoom()) {
+                    logger.log(Messages.get("floorplan.state_incomplete"), "orange");
+                    Utils.sleep(1500);
+                }
+                logger.log(Messages.get("floorplan.verified", actualWidth, planHeight(actualPlan), actualTiles), "green");
+                return true;
+            }
+
+            logger.log(Messages.get("floorplan.mismatch",
+                    expectedWidth, planHeight(expectedPlan), expectedTiles,
+                    actualWidth, planHeight(actualPlan), actualTiles,
+                    attempt, FLOORPLAN_ATTEMPTS), "orange");
+            if (attempt < FLOORPLAN_ATTEMPTS) {
+                Utils.sleep(FLOORPLAN_RETRY_WAIT_MS);
+            }
         }
 
-        executor.awaitPacketList(floorHeightMap, objects);
-        if (floorHeightMap.getPacket() == null) {
-            logger.log(Messages.get("floorplan.not_confirmed", roomModel), "red");
-            return false;
-        }
-
-        Utils.sleep(800);
-        if (!extension.getFloorState().inRoom()) {
-            logger.log(Messages.get("floorplan.state_incomplete"), "orange");
-            Utils.sleep(1500);
-        }
-        logger.log(Messages.get("floorplan.applied"), "green");
-        return true;
+        logger.log(Messages.get("floorplan.never_applied"), "red");
+        return false;
     }
+
+    private static final int FLOORPLAN_ATTEMPTS = 3;
+    private static final int FLOORPLAN_RETRY_WAIT_MS = 2500;
+
+    private static String readHeightMapPlan(HPacket packet) {
+        try {
+            packet.resetReadIndex();
+            packet.readBoolean();
+            packet.readInteger();
+            return packet.readString(StandardCharsets.UTF_8);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    private static String[] planRows(String plan) {
+        if (plan == null) return new String[0];
+        return plan.replace((char) 10, (char) 13).split(String.valueOf((char) 13));
+    }
+
+    private static int planWidth(String plan) {
+        int width = 0;
+        for (String row : planRows(plan)) {
+            width = Math.max(width, row.length());
+        }
+        return width;
+    }
+
+    private static int planHeight(String plan) {
+        int height = 0;
+        for (String row : planRows(plan)) {
+            if (!row.isEmpty()) height++;
+        }
+        return height;
+    }
+
+    private static int walkableTiles(String plan) {
+        int count = 0;
+        for (String row : planRows(plan)) {
+            for (int i = 0; i < row.length(); i++) {
+                char c = row.charAt(i);
+                if (c != 'x' && c != 'X') count++;
+            }
+        }
+        return count;
+    }
+
+
 
     private boolean stillInRoom(int furniId) {
         try {
