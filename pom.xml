@@ -7,7 +7,7 @@
     <groupId>gearthextensions</groupId>
     <artifactId>GPresetsPlus</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -52,6 +52,8 @@
                         </manifest>
                         <manifestEntries>
                             <Built-By>Sucukdeluxe</Built-By>
+                            <Add-Opens>javafx.graphics/javafx.scene.text</Add-Opens>
+                            <Add-Exports>javafx.graphics/com.sun.javafx.scene.text javafx.graphics/com.sun.javafx.text</Add-Exports>
                         </manifestEntries>
                     </archive>
                 </configuration>

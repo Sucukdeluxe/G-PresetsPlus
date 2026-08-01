@@ -73,6 +73,85 @@ public class PresetConfigUtils {
         return true;
     }
 
+    public static class Counts {
+        public final int furni;
+        public final int wired;
+
+        Counts(int furni, int wired) {
+            this.furni = furni;
+            this.wired = wired;
+        }
+    }
+
+    private static final java.util.Map<String, String> COUNT_STAMPS = new java.util.HashMap<>();
+    private static final java.util.Map<String, Counts> COUNT_CACHE = new java.util.HashMap<>();
+
+    public static synchronized Counts counts(String name) {
+        File file = new File(presetPath(), name + PRESET_EXT);
+        if (!file.isFile()) {
+            COUNT_STAMPS.remove(name);
+            COUNT_CACHE.remove(name);
+            return null;
+        }
+
+        String stamp = file.length() + "/" + file.lastModified();
+        if (stamp.equals(COUNT_STAMPS.get(name))) {
+            return COUNT_CACHE.get(name);
+        }
+
+        Counts counts = read(file);
+        if (counts != null) {
+            COUNT_STAMPS.put(name, stamp);
+            COUNT_CACHE.put(name, counts);
+        }
+        return counts;
+    }
+
+    private static Counts read(File file) {
+        try {
+            String contents = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            JSONObject json = new JSONObject(contents);
+            int furni = json.optJSONArray("furni") == null ? 0 : json.getJSONArray("furni").length();
+
+            int wired = 0;
+            JSONObject wiredJson = json.optJSONObject("wired");
+            if (wiredJson != null) {
+                for (String key : new String[] { "triggers", "conditions", "effects",
+                        "selectors", "addons", "variables" }) {
+                    if (wiredJson.optJSONArray(key) != null) {
+                        wired += wiredJson.getJSONArray(key).length();
+                    }
+                }
+            }
+            return new Counts(furni, wired);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    public static boolean nameTaken(String name) {
+        File dir = new File(presetPath());
+        return new File(dir, name + PRESET_EXT).isFile()
+                || new File(dir, name + ROOM_EXT).isFile();
+    }
+
+    public static String uniqueName(String base) {
+        return numberedName(base, PresetConfigUtils::nameTaken);
+    }
+
+    public static String numberedName(String base, java.util.function.Predicate<String> taken) {
+        if (!taken.test(base)) {
+            return base;
+        }
+        for (int copy = 1; copy <= 999; copy++) {
+            String candidate = base + " (" + copy + ")";
+            if (!taken.test(candidate)) {
+                return candidate;
+            }
+        }
+        return base;
+    }
+
     public static boolean renamePreset(String from, String to) {
         File dir = new File(presetPath());
         File source = new File(dir, from + PRESET_EXT);

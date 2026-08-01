@@ -402,6 +402,64 @@ public class FloorState {
         }
     }
 
+    public HPoint findFreeSquare(int dimension, java.util.Set<Long> avoid) {
+        int dim = Math.max(1, dimension);
+        synchronized (lock) {
+            if (floorplan == null) return null;
+            int width = floorplan.length;
+            int height = width == 0 ? 0 : floorplan[0].length;
+            for (int x = 0; x + dim <= width; x++) {
+                for (int y = 0; y + dim <= height; y++) {
+                    if (squareUsable(x, y, dim, avoid)) return new HPoint(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean squareUsable(int x0, int y0, int dim, java.util.Set<Long> avoid) {
+        char reference = floorplan[x0][y0];
+        if (reference == 'x' || reference == 'X') return false;
+        for (int x = x0; x < x0 + dim; x++) {
+            for (int y = y0; y < y0 + dim; y++) {
+                char tile = floorplan[x][y];
+                if (tile == 'x' || tile == 'X') return false;
+                if (tile != reference) return false;
+                if (avoid != null && avoid.contains(((long) x << 32) | (y & 0xffffffffL))) return false;
+                if (!getFurniOnTile(x, y).isEmpty()) return false;
+            }
+        }
+        return true;
+    }
+
+    public HPoint findFreeArea(int width, int height, java.util.Set<Long> avoid) {
+        int w = Math.max(1, width);
+        int h = Math.max(1, height);
+        synchronized (lock) {
+            if (floorplan == null) return null;
+            int planWidth = floorplan.length;
+            int planHeight = planWidth == 0 ? 0 : floorplan[0].length;
+            for (int x = 0; x + w <= planWidth; x++) {
+                for (int y = 0; y + h <= planHeight; y++) {
+                    if (areaUsable(x, y, w, h, avoid)) return new HPoint(x, y);
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean areaUsable(int x0, int y0, int w, int h, java.util.Set<Long> avoid) {
+        for (int x = x0; x < x0 + w; x++) {
+            for (int y = y0; y < y0 + h; y++) {
+                char tile = floorplan[x][y];
+                if (tile == 'x' || tile == 'X') return false;
+                if (avoid != null && avoid.contains(((long) x << 32) | (y & 0xffffffffL))) return false;
+                if (!getFurniOnTile(x, y).isEmpty()) return false;
+            }
+        }
+        return true;
+    }
+
     public List<HFloorItem> getFurniOnTile(int x, int y) {
         synchronized (lock) {
             if (inRoom()) {

@@ -77,12 +77,23 @@
                   <Button fx:id="openPresetsFolderBtn" layoutX="330.0" layoutY="141.0" mnemonicParsing="false" onAction="#openPresetsFolderClick" prefHeight="25.0" prefWidth="190.0" text="Open presets folder" />
                   <Button fx:id="currentPresetBtn" layoutX="330.0" layoutY="176.0" mnemonicParsing="false" onAction="#openCurrentPresetClick" prefHeight="25.0" prefWidth="190.0" text="Open preset in editor" />
                   <Button fx:id="clearWiredBtn" layoutX="330.0" layoutY="211.0" mnemonicParsing="false" onAction="#clearWiredClick" prefHeight="25.0" prefWidth="190.0" text="Clear wired cache" />
+                  <Button fx:id="importPresetBtn" layoutX="330.0" layoutY="253.0" mnemonicParsing="false" onAction="#importPresetClick" prefHeight="27.0" prefWidth="190.0" text="Import preset..." />
                   <VBox layoutX="540.0" layoutY="36.0" prefWidth="230.0" spacing="14.0">
                      <children>
                         <VBox spacing="0.0">
                            <children>
+                              <Label fx:id="selectedPresetLbl" maxWidth="1.7976931348623157E308" styleClass="hint-box" text="No preset selected" wrapText="true" />
                               <Button fx:id="buildPresetBtn" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#buildSelectedPresetClick" prefHeight="40.0" text="Build in this room" />
-                              <Label fx:id="buildPresetHintLbl" maxWidth="1.7976931348623157E308" styleClass="hint-box" text="Selects the preset. Start the build in game with :ip (click) or :ip x,y." wrapText="true" />
+                              <HBox alignment="CENTER_LEFT" spacing="6.0">
+                                 <children>
+                                    <Label fx:id="buildHerePosLbl" minWidth="-Infinity" text="Position" />
+                                    <TextField fx:id="buildHereXY_txt" promptText="x,y" HBox.hgrow="ALWAYS" />
+                                 </children>
+                                 <VBox.margin>
+                                    <Insets bottom="8.0" top="10.0" />
+                                 </VBox.margin>
+                              </HBox>
+                              <Label fx:id="buildPresetHintLbl" maxWidth="1.7976931348623157E308" styleClass="hint-box-solo" text="Builds the selected preset in the room you are currently in." wrapText="true" />
                            </children>
                         </VBox>
                         <VBox spacing="0.0">
@@ -99,7 +110,9 @@
     </Tab>
     <Tab fx:id="settingsTab" text="Settings">
       <content>
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="396.0" prefWidth="1000.0">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: transparent;">
+        <content>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="600.0" prefWidth="1000.0">
                <children>
                   <Label fx:id="mainStackTileLbl" layoutX="14.0" layoutY="14.0" text="Main stack tile:" />
                   <HBox layoutX="140.0" layoutY="14.0" spacing="18.0">
@@ -159,7 +172,13 @@
                         <VBox spacing="5.0">
                            <children>
                               <CheckBox fx:id="workAnnexCbx" mnemonicParsing="false" selected="true" text="Temporary work area in new rooms" />
-                              <Label fx:id="workAnnexHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="Only applies when a room is created. Building into a room you are already in uses the free space there." wrapText="true" />
+                              <Label fx:id="workAnnexHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="Only applies when a room is created." wrapText="true" />
+                              <CheckBox fx:id="workAnnexHereCbx" mnemonicParsing="false" selected="true" text="Temporary work area in existing rooms" />
+                              <Label fx:id="workAnnexHereHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="For Build preset here: hangs a few walkable tiles next to the room, keeps stack tile and work tile there, and removes them afterwards. Your own floor plan is restored unchanged." wrapText="true" />
+                              <CheckBox fx:id="presetPlanHereCbx" mnemonicParsing="false" text="Adopt the floor plan stored with the preset" />
+                              <Label fx:id="presetPlanHereHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="Builds the preset exactly as designed - but replaces the floor plan of the room you are in. Without this option your floor plan stays untouched." wrapText="true" />
+                              <CheckBox fx:id="autoStackTileCbx" mnemonicParsing="false" selected="true" text="Temporary stack tile in existing rooms" />
+                              <Label fx:id="autoStackTileHintLbl" maxWidth="640.0" prefWidth="640.0" styleClass="hint-box-solo" text="Fallback when the work area is switched off: places the stack tile inside the room and picks it up afterwards." wrapText="true" />
                            </children>
                         </VBox>
                         <CheckBox fx:id="noExportWiredCbx" mnemonicParsing="false" text="Do not export wired" />
@@ -167,6 +186,8 @@
                      </children>
                   </VBox>
                </children></AnchorPane>
+        </content>
+        </ScrollPane>
       </content>
     </Tab>
       <Tab fx:id="presetConfigTab" text="Preset configuration">

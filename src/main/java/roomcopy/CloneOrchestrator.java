@@ -120,6 +120,133 @@ public class CloneOrchestrator {
         return true;
     }
 
+    public boolean startBuildHere(String presetName, HPoint requestedRoot,
+                                 boolean adoptPresetPlan, Consumer<Boolean> onFinished) {
+        if (running) {
+            logger.logKey("clone.already_running", "red");
+            return false;
+        }
+        running = true;
+        cancelRequested = false;
+
+        Thread thread = new Thread(() -> {
+            boolean success = false;
+            try {
+                success = runBuildHere(presetName, requestedRoot, adoptPresetPlan);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                logger.logKey("clone.aborted.exception", "red", t);
+            } finally {
+                running = false;
+                if (onFinished != null) {
+                    onFinished.accept(success);
+                }
+            }
+        }, "build-preset-here");
+        thread.setDaemon(true);
+        thread.start();
+        return true;
+    }
+
+    private boolean runBuildHere(String presetName, HPoint requestedRoot, boolean adoptPresetPlan) {
+        logger.logKey("buildhere.title", "purple", presetName);
+
+        if (!extension.furniDataReady()) {
+            logger.logKey("clone.furnidata_not_ready", "red");
+            return false;
+        }
+        if (!extension.getFloorState().inRoom()) {
+            logger.logKey("preset.import.not_ready.no_room", "red");
+            return false;
+        }
+
+        PresetConfig preset = PresetConfigUtils.loadPreset(presetName);
+        if (preset == null || preset.getFurniture().isEmpty()) {
+            logger.logKey("preset.newroom.load_failed", "red", presetName);
+            return false;
+        }
+
+        RoomSnapshot room = roomCapture.capture(extension.getFurniDataTools());
+        if (room == null || room.floorPlan == null || room.settings == null) {
+            logger.logKey("buildhere.no_room_data", "red");
+            return false;
+        }
+
+        int maxX = 0;
+        int maxY = 0;
+        for (Long tile : presetFootprints(preset, false)) {
+            maxX = Math.max(maxX, (int) (tile >> 32));
+            maxY = Math.max(maxY, (int) (tile & 0xffffffffL));
+        }
+        int presetWidth = maxX + 1;
+        int presetHeight = maxY + 1;
+
+        RoomSnapshot saved = loadRoomSnapshot(presetName);
+        boolean usePresetPlan = adoptPresetPlan && saved != null && saved.floorPlan != null;
+
+        RoomSnapshot base;
+        HPoint root;
+        if (usePresetPlan) {
+            base = new RoomSnapshot(
+                    saved.settings != null ? saved.settings : room.settings, saved.floorPlan, null);
+            root = new HPoint(0, 0);
+            logger.logKey("buildhere.plan_adopted", "orange",
+                    saved.floorPlan.width(), saved.floorPlan.height(), saved.floorPlan.usableTiles());
+        } else {
+            base = room;
+            root = requestedRoot != null
+                    ? requestedRoot
+                    : extension.getFloorState().findFreeArea(presetWidth, presetHeight, null);
+            if (root == null) {
+                logger.logKey("buildhere.no_area", "red", presetWidth, presetHeight);
+                return false;
+            }
+            if (saved != null && saved.floorPlan != null) {
+                logger.logKey("buildhere.plan_available", "orange");
+            }
+        }
+
+        int dimension = Math.max(1, extension.getStackTileSetting().getDimension());
+        WorkAnnex annex = WorkAnnex.build(base.floorPlan, dimension);
+        if (annex == null) {
+            logger.logKey("buildhere.annex_unavailable", "red");
+            return false;
+        }
+        logger.log(annex.describe(dimension), "blue");
+
+        if (!applyFloorPlan(base, annex)) {
+            return false;
+        }
+        if (cancelled() || !ensureInventory()) {
+            removeAnnex(base, annex, 0);
+            return false;
+        }
+
+        int stackTileId = stackTileBootstrap.ensureStackTile(extension.getStackTileSetting(),
+                extension.getItemSource(), extension.getFloorState(), extension.getInventory(),
+                extension.getFurniDataTools(), annex.getStackTileSpot());
+        if (stackTileId == StackTileBootstrap.FAILED) {
+            removeAnnex(base, annex, 0);
+            return false;
+        }
+
+        List<Integer> helperStackTiles =
+                placeSmallerStackTiles(annex, base, preset, annex.getStackTileSpot());
+
+        boolean built = buildPreset(preset, annex.getReservedSpot(), null,
+                annex.getStackTileSpot(), root);
+
+        for (Integer helper : helperStackTiles) {
+            pickUpStackTile(helper);
+        }
+        if (!removeAnnex(base, annex, stackTileId)) {
+            logger.logKey("clone.cleanup_incomplete", "orange");
+        }
+
+        logger.logKey(built ? "buildhere.done" : "buildhere.failed", built ? "green" : "orange");
+        return built;
+    }
+
     public boolean startPresetToNewRoom(String presetName, Consumer<Boolean> onFinished) {
         if (running) {
             logger.logKey("clone.already_running", "red");
@@ -260,7 +387,8 @@ public class CloneOrchestrator {
         }
         if (cancelled()) return false;
 
-        List<Integer> helperStackTiles = placeSmallerStackTiles(annex);
+        List<Integer> helperStackTiles =
+                placeSmallerStackTiles(annex, snapshot, preset, stackTileLocation);
         if (cancelled()) return false;
 
         if (!buildPreset(preset, reservedSpace, 0, stackTileLocation, presetRoot)) {
@@ -285,27 +413,47 @@ public class CloneOrchestrator {
         return true;
     }
 
-    private List<Integer> placeSmallerStackTiles(WorkAnnex annex) {
+    private List<Integer> placeSmallerStackTiles(WorkAnnex annex, RoomSnapshot snapshot,
+                                                 PresetConfig preset, HPoint mainSpot) {
         List<Integer> placed = new ArrayList<>();
-        if (annex == null) {
-            return placed;
-        }
 
         int mainDimension = extension.getStackTileSetting().getDimension();
         if (mainDimension <= 1) {
             return placed;
         }
 
-        HPoint mediumSpot = annex.getMediumStackSpot();
-        addHelperStackTile(placed, StackTileSetting.Large, mainDimension, mediumSpot);
+        HPoint mediumSpot;
+        HPoint smallSpot;
+        if (annex != null) {
+            mediumSpot = annex.getMediumStackSpot();
+            smallSpot = mainDimension > 2 ? mediumSpot : annex.getStackTileSpot();
+        } else {
+            mediumSpot = mainDimension > 2 ? freeSpotNear(snapshot, preset, mainSpot, 2) : null;
+            smallSpot = mediumSpot != null ? mediumSpot : mainSpot;
+        }
 
-        HPoint smallSpot = mainDimension > 2 ? mediumSpot : annex.getStackTileSpot();
+        addHelperStackTile(placed, StackTileSetting.Large, mainDimension, mediumSpot);
         addHelperStackTile(placed, StackTileSetting.Small, mainDimension, smallSpot);
 
         if (!placed.isEmpty()) {
             logger.logKey("stacktile.helpers_placed", "green", placed.size());
         }
         return placed;
+    }
+
+    private HPoint freeSpotNear(RoomSnapshot snapshot, PresetConfig preset, HPoint mainSpot, int dimension) {
+        if (snapshot == null || snapshot.floorPlan == null || mainSpot == null) {
+            return null;
+        }
+        Set<Long> blocked = presetFootprints(preset, false);
+        int mainDimension = Math.max(1, extension.getStackTileSetting().getDimension());
+        for (int dx = 0; dx < mainDimension; dx++) {
+            for (int dy = 0; dy < mainDimension; dy++) {
+                blocked.add(FloorPlanSnapshot.tileKey(mainSpot.getX() + dx, mainSpot.getY() + dy));
+            }
+        }
+        int[] spot = snapshot.floorPlan.findFlatSquare(dimension, blocked);
+        return spot == null ? null : new HPoint(spot[0], spot[1]);
     }
 
     private void addHelperStackTile(List<Integer> placed, StackTileSetting setting,
@@ -505,7 +653,8 @@ public class CloneOrchestrator {
         }
         if (cancelled()) return false;
 
-        List<Integer> helperStackTiles = placeSmallerStackTiles(annex);
+        List<Integer> helperStackTiles =
+                placeSmallerStackTiles(annex, snapshot, preset, stackTileLocation);
         if (cancelled()) return false;
 
         int targetHeightOffset = PresetUtils.lowestFloorPoint(extension.getFloorState(),
@@ -565,30 +714,11 @@ public class CloneOrchestrator {
     }
 
     private String uniquePresetName(String base) {
-        String chosen = numberedName(base, CloneOrchestrator::presetNameTaken);
+        String chosen = PresetConfigUtils.uniqueName(base);
         if (!chosen.equals(base)) {
             logger.logKey("preset.name.numbered", "blue", base, chosen);
         }
         return chosen;
-    }
-
-    static String numberedName(String base, java.util.function.Predicate<String> taken) {
-        if (!taken.test(base)) {
-            return base;
-        }
-        for (int copy = 1; copy <= 999; copy++) {
-            String candidate = base + " (" + copy + ")";
-            if (!taken.test(candidate)) {
-                return candidate;
-            }
-        }
-        return base;
-    }
-
-    private static boolean presetNameTaken(String name) {
-        File dir = new File(PresetConfigUtils.presetPath());
-        return new File(dir, name + PresetConfigUtils.PRESET_EXT).isFile()
-                || new File(dir, name + PresetConfigUtils.ROOM_EXT).isFile();
     }
 
     private boolean exportPreset(String presetName) {
@@ -1233,6 +1363,11 @@ public class CloneOrchestrator {
     }
 
     private boolean buildPreset(PresetConfig preset, HPoint reservedSpace, int heightOffset,
+                                HPoint preferredStackTile, HPoint root) {
+        return buildPreset(preset, reservedSpace, Integer.valueOf(heightOffset), preferredStackTile, root);
+    }
+
+    private boolean buildPreset(PresetConfig preset, HPoint reservedSpace, Integer heightOffset,
                                 HPoint preferredStackTile, HPoint root) {
         GPresetImporter importer = extension.getImporter();
         importer.setPresetConfig(preset);

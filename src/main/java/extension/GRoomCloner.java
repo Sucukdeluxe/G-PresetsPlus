@@ -37,11 +37,17 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import org.json.JSONObject;
+import extension.ui.PresetImportDialog;
 import extension.ui.PresetSettingsDialog;
 import extension.ui.StyledDialog;
+import roomcopy.BuildEstimate;
 import roomcopy.CloneOrchestrator;
 import roomcopy.FlatCategories;
+import roomcopy.StackTileBootstrap;
+import roomcopy.FloorPlanText;
+import roomcopy.RoomSettingsSnapshot;
 import roomcopy.Executor;
 import roomcopy.ProtocolProbe;
 import utils.InterceptGuard;
@@ -64,7 +70,7 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.1.1",
+        Version =  "1.1.2",
         Author =  "Sucukdeluxe"
 )
 public class GRoomCloner extends ExtensionForm {
@@ -118,6 +124,10 @@ public class GRoomCloner extends ExtensionForm {
     public TextField nameSuffix_txt;
     public CheckBox copyWallItemsCbx;
     public CheckBox workAnnexCbx;
+    public CheckBox workAnnexHereCbx;
+    public CheckBox presetPlanHereCbx;
+    public CheckBox autoStackTileCbx;
+    public TextField buildHereXY_txt;
     public Label cloneStatusLbl;
 
     public TabPane mainTabs;
@@ -129,6 +139,7 @@ public class GRoomCloner extends ExtensionForm {
     public Button loadInventoryBtn;
     public Button reloadRoomBtn;
     public Button reloadPresetsBtn;
+    public Button importPresetBtn;
     public Button openPresetsFolderBtn;
     public Button clearWiredBtn;
     public Button updatePostconfigBtn;
@@ -139,6 +150,11 @@ public class GRoomCloner extends ExtensionForm {
     public Label savedPresetsLbl;
     public Label buildPresetHintLbl;
     public Label presetToNewRoomHintLbl;
+    public Label selectedPresetLbl;
+    public Label buildHerePosLbl;
+    public Label autoStackTileHintLbl;
+    public Label workAnnexHereHintLbl;
+    public Label presetPlanHereHintLbl;
     public Label mainStackTileLbl;
     public Label itemSourceLbl;
     public Label ratelimitLbl;
@@ -209,6 +225,18 @@ public class GRoomCloner extends ExtensionForm {
 
         workAnnexCbx.selectedProperty().addListener(observable ->
                 SettingsCache.put("workAnnex", workAnnexCbx.isSelected())
+        );
+
+        autoStackTileCbx.selectedProperty().addListener(observable ->
+                SettingsCache.put("autoStackTile", autoStackTileCbx.isSelected())
+        );
+
+        workAnnexHereCbx.selectedProperty().addListener(observable ->
+                SettingsCache.put("workAnnexHere", workAnnexHereCbx.isSelected())
+        );
+
+        presetPlanHereCbx.selectedProperty().addListener(observable ->
+                SettingsCache.put("presetPlanHere", presetPlanHereCbx.isSelected())
         );
 
 
@@ -327,6 +355,7 @@ public class GRoomCloner extends ExtensionForm {
             this.floorState.requestRoom(this);
         }
         updateUI();
+        setupPresetCells();
         updateInstalledPresets();
 
         item_src_tgl.selectedToggleProperty().addListener(o -> updatePostConfig());
@@ -399,6 +428,9 @@ public class GRoomCloner extends ExtensionForm {
                 Messages.get("settings.namesuffix.default")));
         copyWallItemsCbx.setSelected(cache.optBoolean("copyWallItems", true));
         workAnnexCbx.setSelected(cache.optBoolean("workAnnex", true));
+        workAnnexHereCbx.setSelected(cache.optBoolean("workAnnexHere", true));
+        presetPlanHereCbx.setSelected(cache.optBoolean("presetPlanHere", false));
+        autoStackTileCbx.setSelected(cache.optBoolean("autoStackTile", true));
 
         boolean onTop = cache.optBoolean("alwaysOnTop", false);
         onTopCloneCbx.setSelected(onTop);
@@ -459,13 +491,40 @@ public class GRoomCloner extends ExtensionForm {
 
     private String loadedPresetName = null;
 
+    private Object[] selectedPresetSummary = null;
+
     private void selectPreset(PresetConfig preset, String name) {
         loadedPresetName = name;
-        logger.log(String.format("Selected \"%s\" preset", name), "green");
+        logger.logKey("preset.selected.log", "green", name);
         importer.setPresetConfig(preset);
         HPoint dim = PresetUtils.presetDimensions(preset);
         logger.logKey("preset.dimensions", "green", dim.getX(), dim.getY());
+        int furniCount = preset.getFurniture() == null ? 0 : preset.getFurniture().size();
+        selectedPresetSummary = new Object[] { name, dim.getX(), dim.getY(), furniCount };
+        Platform.runLater(() -> {
+            refreshSelectedPresetLabel();
+            presetListView.refresh();
+        });
         updateUI();
+    }
+
+    private void refreshSelectedPresetLabel() {
+        if (selectedPresetLbl == null) {
+            return;
+        }
+        if (selectedPresetSummary == null) {
+            selectedPresetLbl.setText(Messages.get("preset.selected.none"));
+            selectedPresetLbl.getStyleClass().remove("hint-box-ok");
+            if (!selectedPresetLbl.getStyleClass().contains("hint-box")) {
+                selectedPresetLbl.getStyleClass().add("hint-box");
+            }
+            return;
+        }
+        selectedPresetLbl.setText(Messages.get("preset.selected.summary", selectedPresetSummary));
+        selectedPresetLbl.getStyleClass().remove("hint-box");
+        if (!selectedPresetLbl.getStyleClass().contains("hint-box-ok")) {
+            selectedPresetLbl.getStyleClass().add("hint-box-ok");
+        }
     }
 
     @Override
@@ -571,8 +630,36 @@ public class GRoomCloner extends ExtensionForm {
         });
     }
 
+    private void setupPresetCells() {
+        presetListView.setCellFactory(view -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String name, boolean empty) {
+                super.updateItem(name, empty);
+                if (empty || name == null) {
+                    setText(null);
+                    return;
+                }
+                PresetConfigUtils.Counts counts = PresetConfigUtils.counts(name);
+                if (counts == null) {
+                    setText(name);
+                } else if (counts.wired > 0) {
+                    setText(Messages.get("preset.list.entry_wired", name, counts.furni, counts.wired));
+                } else {
+                    setText(Messages.get("preset.list.entry", name, counts.furni));
+                }
+
+                boolean loaded = name.equals(loadedPresetName);
+                getStyleClass().remove("preset-loaded");
+                if (loaded) {
+                    getStyleClass().add("preset-loaded");
+                }
+            }
+        });
+    }
+
     public void sendVisualChatInfo(String text) {
-        sendToClient(new HPacket("Whisper", HMessage.Direction.TOCLIENT, -1, text, 0, 30, 0, -1));
+        String wireText = new String(text.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+        sendToClient(new HPacket("Whisper", HMessage.Direction.TOCLIENT, -1, wireText, 0, 30, 0, -1));
     }
 
     public void renamePresetClick(ActionEvent actionEvent) {
@@ -818,8 +905,259 @@ public class GRoomCloner extends ExtensionForm {
             logger.logKey("preset.load_failed.named", "red", presetName);
             return;
         }
+        if (importer.getState() != GPresetImporter.BuildingImportState.NONE) {
+            logger.logKey("preset.import.already_running.log", "red");
+            return;
+        }
+        if (cloneOrchestrator.isRunning()) {
+            logger.logKey("clone.already_running", "red");
+            return;
+        }
+        if (!floorState.inRoom()) {
+            logger.logKey("preset.import.not_ready.no_room", "red");
+            return;
+        }
+        if (permissions.furniExplicitlyDenied()) {
+            logger.logKey("preset.import.not_ready.no_furni_rights", "red");
+            return;
+        }
+
+        String rawPosition = buildHereXY_txt == null ? "" : buildHereXY_txt.getText().trim();
+        HPoint requestedRoot = parseBuildHereRoot(rawPosition);
+        if (requestedRoot == null && !rawPosition.isEmpty()) {
+            logger.logKey("buildhere.bad_position", "red");
+            return;
+        }
+
         selectPreset(preset, presetName);
-        logger.logKey("preset.hint.build_command", "purple");
+
+        if (workAnnexHereCbx != null && workAnnexHereCbx.isSelected()) {
+            boolean adoptPlan = presetPlanHereCbx != null && presetPlanHereCbx.isSelected();
+            cloneOrchestrator.startBuildHere(presetName, requestedRoot, adoptPlan,
+                    success -> Platform.runLater(this::updateUI));
+            return;
+        }
+
+        boolean autoTile = autoStackTileCbx == null || autoStackTileCbx.isSelected();
+        new Thread(() -> runBuildHere(preset, requestedRoot, autoTile)).start();
+    }
+
+    private HPoint parseBuildHereRoot(String raw) {
+        if (raw == null || raw.isEmpty()) return null;
+        try {
+            String[] parts = raw.split("[,; ]+");
+            if (parts.length < 2) return null;
+            return new HPoint(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void runBuildHere(PresetConfig preset, HPoint requestedRoot, boolean autoTile) {
+        List<Integer> temporaryTiles = new ArrayList<>();
+        try {
+            if (inventory.getState() != Inventory.InventoryState.LOADED) {
+                logger.logKey("buildhere.loading_inventory", "blue");
+                inventory.requestInventory();
+                long deadline = System.currentTimeMillis() + 15000;
+                while (inventory.getState() != Inventory.InventoryState.LOADED
+                        && System.currentTimeMillis() < deadline) {
+                    Utils.sleep(200);
+                }
+                if (inventory.getState() != Inventory.InventoryState.LOADED) {
+                    logger.logKey("preset.import.not_ready.no_inventory", "red");
+                    return;
+                }
+            }
+
+            int dimension = Math.max(1, stackTileSetting.getDimension());
+            HPoint presetSize = PresetUtils.presetDimensions(preset);
+            int presetWidth = Math.max(1, presetSize.getX());
+            int presetHeight = Math.max(1, presetSize.getY());
+
+            java.util.Set<Long> occupied = new java.util.HashSet<>();
+            HFloorItem presentTile = stackTile();
+            if (presentTile != null) {
+                markSquare(occupied, presentTile.getTile().getX(), presentTile.getTile().getY(), dimension);
+            }
+
+            HPoint root = requestedRoot;
+            if (root == null) {
+                root = floorState.findFreeArea(presetWidth, presetHeight, occupied);
+                if (root == null) {
+                    logger.logKey("buildhere.no_area", "red", presetWidth, presetHeight);
+                    return;
+                }
+            }
+            else if (floorState.floorHeight(root.getX(), root.getY()) == 'x') {
+                logger.logKey("buildhere.position_outside", "red", root.getX(), root.getY());
+                return;
+            }
+
+            java.util.Set<Long> footprint = new java.util.HashSet<>();
+            for (int dx = 0; dx < presetWidth; dx++) {
+                for (int dy = 0; dy < presetHeight; dy++) {
+                    footprint.add(tileKey(root.getX() + dx, root.getY() + dy));
+                }
+            }
+
+            if (presentTile == null) {
+                if (!autoTile) {
+                    logger.logKey("buildhere.no_stacktile_manual", "red");
+                    return;
+                }
+                HPoint tileSpot = floorState.findFreeSquare(dimension, footprint);
+                if (tileSpot == null) {
+                    logger.logKey("buildhere.no_space_for_stacktile", "red");
+                    return;
+                }
+                int placedTileId = new StackTileBootstrap(executor, logger).ensureStackTile(
+                        stackTileSetting, getItemSource(), floorState, inventory,
+                        furniDataTools, tileSpot);
+                if (placedTileId == StackTileBootstrap.FAILED) {
+                    logger.logKey("buildhere.stacktile_failed", "red");
+                    return;
+                }
+                if (placedTileId > 0) {
+                    temporaryTiles.add(placedTileId);
+                }
+                Utils.sleep(300);
+            }
+
+            HFloorItem tile = stackTile();
+            if (tile == null) {
+                logger.logKey("preset.import.not_ready.no_stacktile", "red");
+                return;
+            }
+
+            int tileX = tile.getTile().getX();
+            int tileY = tile.getTile().getY();
+
+            java.util.Set<Long> avoid = new java.util.HashSet<>(footprint);
+            markSquare(avoid, tileX, tileY, dimension);
+
+            if (autoTile) {
+                temporaryTiles.addAll(placeHelperStackTiles(dimension, avoid));
+            }
+
+            HPoint reserved = floorState.findFreeSquare(1, avoid);
+            if (reserved == null) {
+                logger.logKey("buildhere.no_reserved_space", "red");
+                return;
+            }
+
+            logger.logKey("buildhere.starting", "blue", root.getX(), root.getY(),
+                    reserved.getX(), reserved.getY());
+
+            refreshPostConfig();
+            if (!importer.startImport(reserved, root, null, new HPoint(tileX, tileY))) {
+                return;
+            }
+
+            long lastChange = System.currentTimeMillis();
+            GPresetImporter.BuildingImportState last = importer.getState();
+            while (importer.getState() != GPresetImporter.BuildingImportState.NONE) {
+                GPresetImporter.BuildingImportState now = importer.getState();
+                if (now != last) {
+                    last = now;
+                    lastChange = System.currentTimeMillis();
+                }
+                if (System.currentTimeMillis() - lastChange > 120000) {
+                    logger.logKey("buildhere.timeout", "orange");
+                    break;
+                }
+                Utils.sleep(250);
+            }
+
+            boolean ok = importer.lastImportSucceeded();
+            logger.logKey(ok ? "buildhere.done" : "buildhere.failed", ok ? "green" : "orange");
+        }
+        catch (Exception e) {
+            logger.logKey("buildhere.error", "red", e.getClass().getSimpleName() + " " + e.getMessage());
+        }
+        finally {
+            for (Integer id : temporaryTiles) {
+                pickupTemporaryStackTile(id);
+            }
+            Platform.runLater(this::updateUI);
+        }
+    }
+
+    private static Long tileKey(int x, int y) {
+        return ((long) x << 32) | (y & 0xffffffffL);
+    }
+
+    private static void markSquare(java.util.Set<Long> target, int x0, int y0, int dimension) {
+        for (int dx = 0; dx < dimension; dx++) {
+            for (int dy = 0; dy < dimension; dy++) {
+                target.add(tileKey(x0 + dx, y0 + dy));
+            }
+        }
+    }
+
+    private List<Integer> placeHelperStackTiles(int mainDimension, java.util.Set<Long> blocked) {
+        List<Integer> placed = new ArrayList<>();
+        if (mainDimension <= 1) {
+            return placed;
+        }
+
+        java.util.Set<Long> taken = new java.util.HashSet<>(blocked);
+        if (mainDimension > 2) {
+            addHelperStackTile(placed, taken, StackTileSetting.Large, 2);
+        }
+        addHelperStackTile(placed, taken, StackTileSetting.Small, 1);
+
+        if (!placed.isEmpty()) {
+            logger.logKey("stacktile.helpers_placed", "green", placed.size());
+        }
+        return placed;
+    }
+
+    private void addHelperStackTile(List<Integer> placed, java.util.Set<Long> taken,
+                                    StackTileSetting setting, int dimension) {
+        HPoint spot = floorState.findFreeSquare(dimension, taken);
+        if (spot == null) {
+            logger.logKey("stacktile.helper_no_space", "orange", setting.toString());
+            return;
+        }
+        int id = new StackTileBootstrap(executor, logger).ensureStackTile(setting, getItemSource(),
+                floorState, inventory, furniDataTools, spot);
+        if (id == StackTileBootstrap.FAILED) {
+            logger.logKey("stacktile.helper_unavailable", "orange", setting.toString());
+            return;
+        }
+        markSquare(taken, spot.getX(), spot.getY(), dimension);
+        if (id > 0) {
+            placed.add(id);
+        }
+    }
+
+    private void pickupTemporaryStackTile(int stackTileId) {
+        try {
+            Utils.sleep(400);
+            if (!executor.sendToServer("PickupObject", 2, stackTileId, false)) {
+                logger.logKey("stacktile.pickup.send_failed", "orange");
+                return;
+            }
+            long deadline = System.currentTimeMillis() + 3000;
+            while (System.currentTimeMillis() < deadline) {
+                boolean stillThere = false;
+                for (HFloorItem item : floorState.getItemsFromType(furniDataTools, stackTileSetting.getClassName())) {
+                    if (item.getId() == stackTileId) {
+                        stillThere = true;
+                        break;
+                    }
+                }
+                if (!stillThere) {
+                    logger.logKey("stacktile.pickup.done", "green");
+                    return;
+                }
+                Utils.sleep(150);
+            }
+            logger.logKey("stacktile.pickup.still_present", "orange");
+        }
+        catch (Exception ignored) {
+        }
     }
 
     public void presetToNewRoomClick(ActionEvent actionEvent) {
@@ -874,11 +1212,18 @@ public class GRoomCloner extends ExtensionForm {
         copyWallItemsCbx.setText(Messages.get("ui.checkbox.copywallitems"));
         workAnnexCbx.setText(Messages.get("ui.checkbox.workannex"));
         workAnnexHintLbl.setText(Messages.get("ui.hint.workannex"));
+        workAnnexHereCbx.setText(Messages.get("ui.checkbox.workannexhere"));
+        presetPlanHereCbx.setText(Messages.get("ui.checkbox.presetplanhere"));
+        autoStackTileCbx.setText(Messages.get("ui.checkbox.autostacktile"));
+        autoStackTileHintLbl.setText(Messages.get("ui.hint.autostacktile"));
+        workAnnexHereHintLbl.setText(Messages.get("ui.hint.workannexhere"));
+        presetPlanHereHintLbl.setText(Messages.get("ui.hint.presetplanhere"));
 
         savedPresetsLbl.setText(Messages.get("ui.label.savedpresets"));
         availabilityBtn.setText(Messages.get("ui.button.checkavailability"));
         selfDonateBtn.setText(Messages.get("ui.button.selfdonate"));
         reloadPresetsBtn.setText(Messages.get("ui.button.reloadpresets"));
+        importPresetBtn.setText(Messages.get("ui.button.importpreset"));
         openPresetsFolderBtn.setText(Messages.get("ui.button.openpresetsfolder"));
         currentPresetBtn.setText(Messages.get("ui.button.openpreset"));
         clearWiredBtn.setText(Messages.get("ui.button.clearwiredcache"));
@@ -888,6 +1233,8 @@ public class GRoomCloner extends ExtensionForm {
         onTopCloneCbx.setText(Messages.get("ui.checkbox.alwaysontop"));
         buildPresetBtn.setText(Messages.get("ui.button.buildpreset"));
         buildPresetHintLbl.setText(Messages.get("ui.label.buildpresethint"));
+        buildHerePosLbl.setText(Messages.get("ui.label.buildhereposition"));
+        refreshSelectedPresetLabel();
         presetToNewRoomBtn.setText(Messages.get("ui.button.presettonewroom"));
         presetToNewRoomHintLbl.setText(Messages.get("ui.label.presettonewroomhint"));
 
@@ -995,11 +1342,37 @@ public class GRoomCloner extends ExtensionForm {
             }
 
             AvailabilityChecker.printAvailability(logger, fakeDropInfo, inventory, furniDataTools);
+            logBuildEstimate(combined);
         }
         else {
             logger.logKey("preset.availability.not_ready", "red");
         }
 
+    }
+
+    private void logBuildEstimate(PresetConfig preset) {
+        int furni = preset.getFurniture().size();
+        int wired = 0;
+        if (preset.getPresetWireds() != null) {
+            wired = preset.getPresetWireds().getTriggers().size()
+                    + preset.getPresetWireds().getConditions().size()
+                    + preset.getPresetWireds().getEffects().size()
+                    + preset.getPresetWireds().getSelectors().size()
+                    + preset.getPresetWireds().getAddons().size()
+                    + preset.getPresetWireds().getVariables().size();
+        }
+
+        int rateLimit = (int) ratelimiter.getValue();
+        ItemSource itemSource = ItemSource.valueOf((String) item_src_tgl.getSelectedToggle().getUserData());
+        boolean fromBc = itemSource == ItemSource.ONLY_BC || itemSource == ItemSource.PREFER_BC;
+
+        BuildEstimate estimate = BuildEstimate.of(furni, wired, fromBc, rateLimit);
+
+        logger.logKey("preset.estimate.contents", "blue", furni, wired);
+        logger.logKey("preset.estimate.placing", "blue", BuildEstimate.format(estimate.dropMs));
+        logger.logKey("preset.estimate.total", "green",
+                BuildEstimate.format(estimate.totalMs), rateLimit,
+                Messages.get(fromBc ? "preset.estimate.source.bc" : "preset.estimate.source.inventory"));
     }
 
     public void selfDonateBtnClick(ActionEvent actionEvent) {
@@ -1069,6 +1442,114 @@ public class GRoomCloner extends ExtensionForm {
             logger.logKey("preset.open.folder_instead", "orange", file.getName());
         } catch (Throwable t) {
             logger.logKey("preset.open.failed", "red", file.getAbsolutePath());
+        }
+    }
+
+    public void importPresetClick(ActionEvent actionEvent) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(Messages.get("preset.import.choose"));
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(Messages.get("preset.import.filter.preset"), "*.json"),
+                new FileChooser.ExtensionFilter(Messages.get("preset.import.filter.all"), "*.*"));
+
+        File file = chooser.showOpenDialog(primaryStage);
+        if (file == null) {
+            return;
+        }
+
+        String raw;
+        PresetConfig config;
+        try {
+            raw = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            config = new PresetConfig(new JSONObject(raw));
+        } catch (Throwable t) {
+            logger.logKey("preset.import.error.unreadable", "red", file.getName(), t);
+            return;
+        }
+        if (config.getFurniture().isEmpty()) {
+            logger.logKey("preset.import.error.no_furni", "red", file.getName());
+            return;
+        }
+
+        PresetImportDialog dialog = new PresetImportDialog(file, config.getFurniture().size());
+        if (!dialog.show(primaryStage)) {
+            return;
+        }
+
+        String name = PresetConfigUtils.uniqueName(dialog.getPresetName());
+        if (!name.equals(dialog.getPresetName())) {
+            logger.logKey("preset.name.numbered", "blue", dialog.getPresetName(), name);
+        }
+
+        File dir = new File(PresetConfigUtils.presetPath());
+        dir.mkdirs();
+        try (Writer writer = new OutputStreamWriter(
+                Files.newOutputStream(new File(dir, name + PresetConfigUtils.PRESET_EXT).toPath()),
+                StandardCharsets.UTF_8)) {
+            writer.write(raw);
+            writer.flush();
+        } catch (IOException e) {
+            logger.logKey("preset.import.error.write", "red", e);
+            return;
+        }
+
+        boolean wantsPlan = dialog.getSnapshotFile() != null
+                || !dialog.getFloorPlanText().trim().isEmpty();
+        if (wantsPlan && !importFloorPlan(dir, name, dialog)) {
+            logger.logKey("preset.import.floorplan.skipped", "orange");
+        }
+
+        logger.logKey("preset.import.done", "green", name, config.getFurniture().size());
+        updateInstalledPresets();
+        Platform.runLater(() -> presetListView.getSelectionModel().select(name));
+    }
+
+    private boolean importFloorPlan(File dir, String name, PresetImportDialog dialog) {
+        JSONObject root = new JSONObject();
+        File snapshot = dialog.getSnapshotFile();
+
+        if (snapshot != null) {
+            try {
+                JSONObject existing = new JSONObject(
+                        new String(Files.readAllBytes(snapshot.toPath()), StandardCharsets.UTF_8));
+                if (existing.optJSONObject("floorPlan") == null) {
+                    logger.logKey("preset.import.floorplan.no_plan", "orange", snapshot.getName());
+                    return false;
+                }
+                root = existing;
+                logger.logKey("preset.import.floorplan.snapshot", "blue", snapshot.getName());
+            } catch (Throwable t) {
+                logger.logKey("preset.import.floorplan.unreadable", "orange", snapshot.getName(), t);
+                return false;
+            }
+        } else {
+            FloorPlanText parsed = FloorPlanText.parse(dialog.getFloorPlanText());
+            if (parsed == null) {
+                logger.logKey("preset.import.floorplan.unparsable", "orange", name);
+                return false;
+            }
+            root.put("roomData", RoomSettingsSnapshot.defaults(name).toJson());
+            root.put("floorPlan", parsed.toFloorPlanJson());
+
+            logger.logKey("preset.import.floorplan.parsed", "green",
+                    parsed.width, parsed.height, parsed.walkableTiles,
+                    parsed.doorX, parsed.doorY,
+                    Messages.get("preset.import.door." + parsed.doorSource.name()));
+            if (parsed.violatesDoorRule()) {
+                logger.logKey("preset.import.floorplan.door_rule", "orange",
+                        parsed.firstRowWalkable, parsed.firstColumnWalkable);
+            }
+        }
+
+        try (Writer writer = new OutputStreamWriter(
+                Files.newOutputStream(new File(dir, name + PresetConfigUtils.ROOM_EXT).toPath()),
+                StandardCharsets.UTF_8)) {
+            writer.write(root.toString(4));
+            writer.flush();
+            return true;
+        } catch (IOException e) {
+            logger.logKey("preset.import.error.write", "red", e);
+            return false;
         }
     }
 

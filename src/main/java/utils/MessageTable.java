@@ -17,10 +17,10 @@ class MessageTable {
                 "Kein FlatCreated (Versuch %d von %d) - der Server antwortet manchmal einfach nicht. Warte %d s und versuche es erneut");
         Messages.put("inventory.requested",
                 "Requesting the inventory from the server - with a large inventory this takes a while",
-                "Frage das Inventar beim Server ab - bei großem Inventar dauert das eine Weile");
+                "Frage das Inventar beim Server ab - bei gro\u00dfem Inventar dauert das eine Weile");
         Messages.put("inventory.block_released",
                 "A stale inventory request was still hiding FurniList packets from the client - released",
-                "Eine hängende Inventar-Anfrage hat noch FurniList-Pakete vor dem Client versteckt - freigegeben");
+                "Eine h\u00e4ngende Inventar-Anfrage hat noch FurniList-Pakete vor dem Client versteckt - freigegeben");
         Messages.put("inventory.kept_cached",
                 "The server did not resend the inventory - it only sends the full list once per session. Keeping the %d items already read",
                 "Der Server hat das Inventar nicht erneut geschickt - er sendet die volle Liste nur einmal pro Session. Behalte die %d bereits gelesenen Objekte");
@@ -352,16 +352,16 @@ class MessageTable {
                 "Raum anlegen + aufbauen");
         Messages.put("ui.label.presettonewroomhint",
                 "Creates a room large enough for the preset, enters it and builds the preset there.",
-                "Legt einen passend großen Raum an, springt rein und baut das Preset dort auf.");
+                "Legt einen passend gro\u00dfen Raum an, springt rein und baut das Preset dort auf.");
         Messages.put("annex.describe.full",
                 "Annex %dx%d at %d,%d | door %d,%d | stack tile %dx%d at %d,%d | free space %d,%d | plan %dx%d",
-                "Anbau %dx%d ab %d,%d | Tür %d,%d | Stacktile %dx%d ab %d,%d | Freifläche %d,%d | Plan %dx%d");
+                "Anbau %dx%d ab %d,%d | T\u00fcr %d,%d | Stacktile %dx%d ab %d,%d | Freifl\u00e4che %d,%d | Plan %dx%d");
         Messages.put("stacktile.in_room",
                 "Stack tile is in the room (ID %s)",
                 "Stacktile liegt im Raum (ID %s)");
         Messages.put("stacktile.none_available",
                 "No stack tile \"%s\" available - put one in your inventory or pick a different stack tile size",
-                "Kein Stacktile \"%s\" verfügbar - leg eins ins Inventar oder wähle eine andere Stacktile-Größe");
+                "Kein Stacktile \"%s\" verf\u00fcgbar - leg eins ins Inventar oder w\u00e4hle eine andere Stacktile-Gr\u00f6\u00dfe");
         Messages.put("stacktile.source.bc",
                 "Builders Club",
                 "Builders Club");
@@ -379,10 +379,10 @@ class MessageTable {
                 "Das Preset braucht %dx%d Felder - das passt nicht in einen Habbo-Raum");
         Messages.put("preset.newroom.summary",
                 "Preset \"%s\": %d furni, needs %dx%d tiles",
-                "Preset \"%s\": %d Möbel, braucht %dx%d Felder");
+                "Preset \"%s\": %d M\u00f6bel, braucht %dx%d Felder");
         Messages.put("stacktile.no_space_found",
                 "No space found for stack tile and free area",
-                "Kein Platz für Stacktile und Freifläche gefunden");
+                "Kein Platz f\u00fcr Stacktile und Freifl\u00e4che gefunden");
     }
 
     private static void fill1() {
@@ -405,8 +405,8 @@ class MessageTable {
                 "Door is back like in the original, only the annex remains",
                 "T\u00fcr steht wieder wie im Original, nur der Anbau bleibt");
         Messages.put("annex.not_fitting",
-                "Work annex does not fit (room too large or floor plan limit) - stack tile and free area will be searched inside the room itself",
-                "Arbeits-Anbau passt nicht (Raum zu gro\u00df oder Floorplan-Grenze) - Stacktile und Freifl\u00e4che werden im Raum selbst gesucht");
+                "The work area does not fit - Habbo caps a room at 55x55 plus the door tile. Stack tile and free space are placed inside the room instead",
+                "Der Arbeitsbereich passt nicht - Habbo begrenzt einen Raum auf 55x55 plus T\u00fcrkachel. Stapelfeld und Freifl\u00e4che werden stattdessen im Raum gesetzt");
         Messages.put("annex.purpose",
                 "The annex keeps the stack tile, the free area and the door out of the real room and is removed again after the build",
                 "Der Anbau h\u00e4lt Stacktile, Freifl\u00e4che und T\u00fcr aus dem echten Raum heraus und wird nach dem Aufbau wieder entfernt");
@@ -671,6 +671,9 @@ class MessageTable {
         Messages.put("preset.export.enter_name",
                 "Enter the name of the preset",
                 "Gib den Namen des Presets ein");
+        Messages.put("preset.export.error.invalid_characters",
+                "Invalid characters in name, don't use the following characters: &lt; &gt; : / \\ | ? *",
+                "Ung\u00fcltige Zeichen im Namen, verwende diese Zeichen nicht: &lt; &gt; : / \\ | ? *");
         Messages.put("preset.export.error.insufficient_resources",
                 "ERROR - Couldn't export due to insufficient resources",
                 "FEHLER - Export nicht m\u00f6glich, es fehlen Ressourcen");
@@ -773,6 +776,15 @@ class MessageTable {
         Messages.put("preset.import.inventory_item_missing_continue",
                 "Couldn't find '%s' in the inventory.. continuing",
                 "'%s' nicht im Inventar gefunden.. es geht weiter");
+        Messages.put("preset.import.rejected.header",
+                "%d furni were rejected by the server while being placed:",
+                "%d M\u00f6bel hat der Server beim Platzieren abgelehnt:");
+        Messages.put("preset.import.rejected.item",
+                "%s at %d,%d",
+                "%s auf %d,%d");
+        Messages.put("preset.import.rejected.hint",
+                "In game this shows as \"Sorry, you cannot place this item here\" - the tile is blocked by something that carries nothing on top.",
+                "Im Spiel erscheint das als \"Sorry, you cannot place this item here\" - auf der Kachel liegt etwas, das nichts auf sich tragen kann.");
         Messages.put("preset.import.missing.header",
                 "%d furni missing:",
                 "Es fehlen %d M\u00f6bel:");
@@ -818,6 +830,12 @@ class MessageTable {
         Messages.put("preset.import.not_ready.no_wired_rights",
                 "No rights for wired",
                 "Keine Rechte f\u00fcr Wired");
+        Messages.put("preset.import.progress.ingame",
+                "%s (%s/%s) - %s%% done",
+                "%s (%s/%s) - %s%% fertig");
+        Messages.put("preset.import.flat_conflict",
+                "Tile %d,%d: nothing can be placed on %s, so %s will be rejected there",
+                "Kachel %d,%d: auf %s kann nichts liegen, %s wird dort abgelehnt");
         Messages.put("preset.import.progress.format",
                 "%s (%d/%d)",
                 "%s (%d/%d)");
@@ -856,19 +874,157 @@ class MessageTable {
                 "Die Preset-Datei \"%s\" gibt es nicht mehr");
         Messages.put("preset.open.unsupported",
                 "This system cannot open files from here - the folder is %s",
-                "Dieses System kann von hier keine Dateien öffnen - der Ordner ist %s");
+                "Dieses System kann von hier keine Dateien \u00f6ffnen - der Ordner ist %s");
         Messages.put("preset.open.folder_instead",
                 "No editor is registered for \"%s\" - opened the folder instead",
-                "F\u00fcr \"%s\" ist kein Editor hinterlegt - stattdessen den Ordner geöffnet");
+                "F\u00fcr \"%s\" ist kein Editor hinterlegt - stattdessen den Ordner ge\u00f6ffnet");
         Messages.put("preset.open.failed",
                 "Could not open %s",
-                "%s konnte nicht geöffnet werden");
+                "%s konnte nicht ge\u00f6ffnet werden");
         Messages.put("wired.cache.cleared",
                 "Wired cache cleared (%d entries)",
-                "Wired-Cache geleert (%d Einträge)");
+                "Wired-Cache geleert (%d Eintr\u00e4ge)");
         Messages.put("wired.cache.busy",
                 "Wired configurations are being fetched right now - the cache stays as it is",
                 "Wired-Konfigurationen werden gerade geholt - der Cache bleibt wie er ist");
+        Messages.put("ui.button.importpreset",
+                "Import preset...",
+                "Preset importieren...");
+        Messages.put("preset.import.floorplan.load",
+                "Load from file...",
+                "Aus Datei laden...");
+        Messages.put("preset.import.floorplan.prompt",
+                "Paste the floor plan here - one row per line, x is blocked, 0 is walkable",
+                "Floorplan hier einf\u00fcgen - eine Zeile pro Reihe, x ist gesperrt, 0 begehbar");
+        Messages.put("preset.import.status.empty",
+                "No floor plan - the preset is saved without one",
+                "Kein Floorplan - das Preset wird ohne gespeichert");
+        Messages.put("preset.import.status.invalid",
+                "This is not a floor plan yet - expected lines of x and 0",
+                "Das ist noch kein Floorplan - erwartet werden Zeilen aus x und 0");
+        Messages.put("preset.import.status.ok",
+                "%sx%s, %s walkable tiles, door %s,%s (%s)",
+                "%sx%s, %s begehbare Kacheln, T\u00fcr %s,%s (%s)");
+        Messages.put("preset.import.status.door_rule",
+                "%sx%s, %s walkable tiles - but the first row has %s and the first column %s. Habbo allows at most one, the server will refuse this plan",
+                "%sx%s, %s begehbare Kacheln - aber die erste Zeile hat %s und die erste Spalte %s. Habbo erlaubt h\u00f6chstens eine, der Server wird den Plan ablehnen");
+        Messages.put("preset.import.status.snapshot",
+                "Room snapshot \"%s\" is used as it is",
+                "Raum-Snapshot \"%s\" wird unver\u00e4ndert benutzt");
+        Messages.put("preset.import.status.unreadable",
+                "\"%s\" could not be read",
+                "\"%s\" konnte nicht gelesen werden");
+        Messages.put("preset.import.error.plan_invalid",
+                "The floor plan cannot be read - remove it or correct it",
+                "Der Floorplan ist nicht lesbar - entferne ihn oder korrigiere ihn");
+        Messages.put("preset.import.title",
+                "Import a preset",
+                "Preset importieren");
+        Messages.put("preset.import.choose",
+                "Choose the preset file",
+                "Preset-Datei w\u00e4hlen");
+        Messages.put("preset.import.filter.preset",
+                "Preset file (*.json)",
+                "Preset-Datei (*.json)");
+        Messages.put("preset.import.filter.floorplan",
+                "Floor plan (*.txt, *.roomJson)",
+                "Floorplan (*.txt, *.roomJson)");
+        Messages.put("preset.import.filter.all",
+                "All files",
+                "Alle Dateien");
+        Messages.put("preset.import.source",
+                "\"%s\" contains %s furni",
+                "\"%s\" enth\u00e4lt %s M\u00f6bel");
+        Messages.put("preset.import.name",
+                "Save as",
+                "Speichern als");
+        Messages.put("preset.import.floorplan",
+                "Floor plan (optional)",
+                "Floorplan (optional)");
+        Messages.put("preset.import.floorplan.none",
+                "none chosen",
+                "keiner gew\u00e4hlt");
+        Messages.put("preset.import.floorplan.choose",
+                "Choose...",
+                "W\u00e4hlen...");
+        Messages.put("preset.import.floorplan.clear",
+                "Remove",
+                "Entfernen");
+        Messages.put("preset.import.floorplan.title",
+                "Choose the floor plan file",
+                "Floorplan-Datei w\u00e4hlen");
+        Messages.put("preset.import.save",
+                "Import",
+                "Importieren");
+        Messages.put("preset.import.note",
+                "Load the plan from a file or paste it straight in. Without one the preset can still be built into a room you are standing in; creating a room for it falls back to a plain rectangle.",
+                "Plan aus einer Datei laden oder direkt hineinkopieren. Ohne einen l\u00e4sst sich das Preset weiterhin in einen Raum bauen, in dem du stehst; \"Raum anlegen + aufbauen\" f\u00e4llt dann auf ein schlichtes Rechteck zur\u00fcck.");
+        Messages.put("preset.import.error.name_empty",
+                "Enter a name for the preset",
+                "Gib dem Preset einen Namen");
+        Messages.put("preset.import.error.unreadable",
+                "\"%s\" could not be read as a preset (%s)",
+                "\"%s\" konnte nicht als Preset gelesen werden (%s)");
+        Messages.put("preset.import.error.no_furni",
+                "\"%s\" contains no furni",
+                "\"%s\" enth\u00e4lt keine M\u00f6bel");
+        Messages.put("preset.import.error.write",
+                "Could not write the preset (%s)",
+                "Preset konnte nicht geschrieben werden (%s)");
+        Messages.put("preset.import.done",
+                "Preset \"%s\" imported with %s furni",
+                "Preset \"%s\" importiert, %s M\u00f6bel");
+        Messages.put("preset.import.floorplan.parsed",
+                "Floor plan read: %sx%s with %s walkable tiles, door %s,%s (%s)",
+                "Floorplan gelesen: %sx%s mit %s begehbaren Kacheln, T\u00fcr %s,%s (%s)");
+        Messages.put("preset.import.floorplan.snapshot",
+                "Floor plan taken from the room snapshot \"%s\"",
+                "Floorplan aus dem Raum-Snapshot \"%s\" " + "" + "genommen");
+        Messages.put("preset.import.floorplan.unreadable",
+                "\"%s\" could not be read (%s)",
+                "\"%s\" konnte nicht gelesen werden (%s)");
+        Messages.put("preset.import.floorplan.unparsable",
+                "\"%s\" is not a floor plan - expected rows of x and 0",
+                "\"%s\" ist kein Floorplan - erwartet werden Zeilen aus x und 0");
+        Messages.put("preset.import.floorplan.no_plan",
+                "\"%s\" contains no floor plan",
+                "\"%s\" enth\u00e4lt keinen Floorplan");
+        Messages.put("preset.import.floorplan.skipped",
+                "The preset was saved, only the floor plan was left out",
+                "Das Preset wurde gespeichert, nur der Floorplan blieb weg");
+        Messages.put("preset.import.floorplan.door_rule",
+                "Careful: the first row has %s and the first column %s walkable tiles. Habbo allows at most one - the server will refuse this plan",
+                "Achtung: die erste Zeile hat %s und die erste Spalte %s begehbare Kacheln. Habbo erlaubt h\u00f6chstens eine - der Server wird diesen Plan ablehnen");
+        Messages.put("preset.import.door.ISOLATED_TILE",
+                "single tile with no neighbours",
+                "einzelne Kachel ohne Nachbarn");
+        Messages.put("preset.import.door.DEAD_END",
+                "only dead end in the plan",
+                "einzige Sackgasse im Plan");
+        Messages.put("preset.import.door.FIRST_WALKABLE",
+                "no clear door found, first walkable tile used",
+                "keine eindeutige T\u00fcr gefunden, erste begehbare Kachel benutzt");
+        Messages.put("preset.list.entry",
+                "%s  -  %s furni",
+                "%s  -  %s M\u00f6bel");
+        Messages.put("preset.list.entry_wired",
+                "%s  -  %s furni, %s wired",
+                "%s  -  %s M\u00f6bel, %s Wired");
+        Messages.put("preset.estimate.contents",
+                "This preset holds %s furni and %s wired configurations",
+                "Dieses Preset umfasst %s M\u00f6bel und %s Wired-Konfigurationen");
+        Messages.put("preset.estimate.placing",
+                "Placing them takes roughly %s",
+                "Das Platzieren dauert ungef\u00e4hr %s");
+        Messages.put("preset.estimate.total",
+                "Whole build roughly %s at a rate limit of %s ms, %s. Waiting for the server is not included",
+                "Gesamter Aufbau ungef\u00e4hr %s bei Ratelimit %s ms, %s. Wartezeiten des Servers sind nicht eingerechnet");
+        Messages.put("preset.estimate.source.bc",
+                "from Builders Club",
+                "aus dem Builders Club");
+        Messages.put("preset.estimate.source.inventory",
+                "from the inventory",
+                "aus dem Inventar");
         Messages.put("preset.none_selected",
                 "No preset selected",
                 "Kein Preset ausgew\u00e4hlt");
@@ -892,7 +1048,7 @@ class MessageTable {
                 "Neuer Raum hat die ID %d");
         Messages.put("room.create.no_confirmation",
                 "The server sent no FlatCreated after several tries - the room was not created. Most likely Habbo is throttling room creation right now; wait a minute and try again",
-                "Der Server hat auch nach mehreren Versuchen kein FlatCreated geschickt - der Raum wurde nicht erstellt. Sehr wahrscheinlich drosselt Habbo gerade das Erstellen von Räumen; warte eine Minute und versuch es nochmal");
+                "Der Server hat auch nach mehreren Versuchen kein FlatCreated geschickt - der Raum wurde nicht erstellt. Sehr wahrscheinlich drosselt Habbo gerade das Erstellen von R\u00e4umen; warte eine Minute und versuch es nochmal");
         Messages.put("room.create.read_failed",
                 "FlatCreated could not be read: %s",
                 "FlatCreated konnte nicht gelesen werden: %s");
@@ -1010,6 +1166,90 @@ class MessageTable {
         Messages.put("stacktile.not_in_furnidata",
                 "Stack tile \"%s\" is not in the furnidata",
                 "Stacktile \"%s\" ist nicht in der Furnidata");
+        Messages.put("preset.selected.none",
+                "No preset selected",
+                "Kein Preset ausgew\u00e4hlt");
+        Messages.put("preset.selected.log",
+                "Selected preset \"%s\"",
+                "Preset \"%s\" ausgew\u00e4hlt");
+        Messages.put("ui.checkbox.autostacktile",
+                "Temporary stack tile in existing rooms",
+                "Tempor\u00e4res Stacktile in bestehenden R\u00e4umen");
+        Messages.put("ui.hint.workannexhere",
+                "For \"Build preset here\": hangs walkable tiles next to the room, keeps stack tile and work tile there, and removes everything afterwards. Your floor plan is restored unchanged.",
+                "F\u00fcr \"Preset hier aufbauen\": h\u00e4ngt begehbare Kacheln neben den Raum, h\u00e4lt Stacktile und Arbeitskachel dort und r\u00e4umt danach alles weg. Dein Grundriss wird unver\u00e4ndert wiederhergestellt.");
+        Messages.put("ui.hint.presetplanhere",
+                "Builds the preset exactly as designed - but replaces the floor plan of the room you are in. Without this option your floor plan stays untouched.",
+                "Baut das Preset genau wie entworfen - ersetzt daf\u00fcr aber den Grundriss des Raums, in dem du stehst. Ohne diese Option bleibt dein Grundriss unangetastet.");
+        Messages.put("ui.hint.autostacktile",
+                "Fallback when the work area is switched off: places the stack tile inside the room and picks it up afterwards.",
+                "Ersatz, wenn der Arbeitsbereich aus ist: legt das Stacktile im Raum selbst hin und sammelt es danach wieder ein.");
+        Messages.put("ui.label.buildhereposition",
+                "Position",
+                "Position");
+        Messages.put("buildhere.no_area",
+                "No free %dx%d area in this room - enter a position to build anyway",
+                "Keine freie Fl\u00e4che %dx%d in diesem Raum - gib eine Position an, um trotzdem zu bauen");
+        Messages.put("buildhere.position_outside",
+                "Position %d,%d is not a tile of this room",
+                "Position %d,%d ist keine Kachel dieses Raums");
+        Messages.put("buildhere.error",
+                "Build here failed: %s",
+                "Aufbau hier fehlgeschlagen: %s");
+        Messages.put("preset.selected.summary",
+                "Selected: %s  -  %dx%d, %d furni",
+                "Gew\u00e4hlt: %s  -  %dx%d, %d M\u00f6bel");
+        Messages.put("buildhere.starting",
+                "Building here: root %d,%d - work tile %d,%d",
+                "Baue hier: Ursprung %d,%d - Arbeitskachel %d,%d");
+        Messages.put("buildhere.loading_inventory",
+                "Loading inventory first...",
+                "Lade zuerst das Inventar...");
+        Messages.put("buildhere.title",
+                "Building \"%s\" into the current room",
+                "Baue \"%s\" in den aktuellen Raum");
+        Messages.put("buildhere.no_room_data",
+                "Could not read the current room",
+                "Der aktuelle Raum konnte nicht gelesen werden");
+        Messages.put("buildhere.annex_unavailable",
+                "No temporary work area fits next to this room - switch the option off to build with a stack tile inside the room",
+                "Neben diesen Raum passt keine tempor\u00e4re Arbeitsfl\u00e4che - schalte die Option aus, um mit einem Stacktile im Raum zu bauen");
+        Messages.put("buildhere.plan_adopted",
+                "Adopting the floor plan stored with the preset: %dx%d, %d tiles - this replaces the floor plan of this room",
+                "Grundriss des Presets wird \u00fcbernommen: %dx%d, %d Kacheln - das ersetzt den Grundriss dieses Raums");
+        Messages.put("buildhere.plan_available",
+                "This preset carries its own floor plan. Enable \"Adopt the floor plan stored with the preset\" to build it exactly as designed.",
+                "Dieses Preset bringt einen eigenen Grundriss mit. Aktiviere \"Grundriss des Presets \u00fcbernehmen\", um es genau wie entworfen aufzubauen.");
+        Messages.put("ui.checkbox.workannexhere",
+                "Temporary work area in existing rooms",
+                "Tempor\u00e4rer Arbeitsbereich in bestehenden R\u00e4umen");
+        Messages.put("ui.checkbox.presetplanhere",
+                "Adopt the floor plan stored with the preset",
+                "Grundriss des Presets \u00fcbernehmen");
+        Messages.put("buildhere.bad_position",
+                "Position must look like x,y - leave empty to choose automatically",
+                "Position muss wie x,y aussehen - leer lassen f\u00fcr automatische Wahl");
+        Messages.put("buildhere.no_stacktile_manual",
+                "No stack tile in the room. Enable \"Temporary stack tile in existing rooms\" or place one yourself.",
+                "Kein Stacktile im Raum. Aktiviere \"Tempor\u00e4res Stacktile in bestehenden R\u00e4umen\" oder lege selbst eins hin.");
+        Messages.put("buildhere.no_space_for_stacktile",
+                "No free square found for the stack tile",
+                "Kein freies Quadrat f\u00fcr das Stacktile gefunden");
+        Messages.put("buildhere.stacktile_failed",
+                "Stack tile could not be placed",
+                "Stacktile konnte nicht gelegt werden");
+        Messages.put("buildhere.no_reserved_space",
+                "No free tile found to work from",
+                "Keine freie Kachel als Arbeitsplatz gefunden");
+        Messages.put("buildhere.timeout",
+                "Build stalled - no progress for 2 minutes",
+                "Aufbau h\u00e4ngt - seit 2 Minuten kein Fortschritt");
+        Messages.put("buildhere.done",
+                "Preset built in this room",
+                "Preset in diesem Raum aufgebaut");
+        Messages.put("buildhere.failed",
+                "Preset was not built completely",
+                "Preset wurde nicht vollst\u00e4ndig aufgebaut");
         Messages.put("stacktile.pickup.already_gone",
                 "Stack tile is no longer in the room",
                 "Stacktile ist nicht mehr im Raum");
@@ -1028,6 +1268,9 @@ class MessageTable {
         Messages.put("stacktile.helpers_placed",
                 "%s smaller stack tile(s) placed as well, so furni also fit into tight gaps",
                 "%s kleinere Stapelfelder zus\u00e4tzlich gesetzt, damit M\u00f6bel auch in enge L\u00fccken passen");
+        Messages.put("stacktile.helper_no_space",
+                "No free square for the %s helper stack tile",
+                "Kein freies Quadrat f\u00fcr das %s-Hilfs-Stacktile");
         Messages.put("stacktile.helper_unavailable",
                 "No %s stack tile available - tight gaps may stay empty",
                 "Kein %s Stapelfeld verf\u00fcgbar - enge L\u00fccken bleiben m\u00f6glicherweise leer");
@@ -1113,8 +1356,8 @@ class MessageTable {
                 "Temporary work area in new rooms",
                 "Tempor\u00e4rer Arbeitsbereich in neuen R\u00e4umen");
         Messages.put("ui.hint.workannex",
-                "Only applies when a room is created. Building into a room you are already in uses the free space there.",
-                "Gilt nur, wenn ein Raum angelegt wird. Beim Aufbauen in einen Raum, in dem du schon stehst, wird der freie Platz dort benutzt.");
+                "Only applies when a room is created.",
+                "Gilt nur, wenn ein Raum angelegt wird.");
         Messages.put("ui.contextmenu.remove",
                 "Remove",
                 "Entfernen");
@@ -1122,8 +1365,8 @@ class MessageTable {
                 "Clone a room including settings, floor plan, furni and wired into a new room",
                 "Raum inkl. Settings, Floorplan, M\u00f6bel und Wired in einen neuen Raum klonen");
         Messages.put("ui.label.buildpresethint",
-                "Builds the selected preset in the room you are currently standing in - without creating a new room.",
-                "Baut das gew\u00e4hlte Preset in den Raum, in dem du gerade stehst - ohne neuen Raum zu erstellen.");
+                "Builds the selected preset in the room you are standing in. Leave the position empty for a free spot, type x,y for a fixed one, or say :ip in game to click the spot yourself.",
+                "Baut das gew\u00e4hlte Preset in den Raum, in dem du stehst. Position leer lassen f\u00fcr einen freien Platz, x,y eintippen f\u00fcr eine feste Stelle, oder im Spiel :ip sagen und die Stelle selbst anklicken.");
         Messages.put("ui.label.existingfurni",
                 "Existing furni:",
                 "Vorhandenes Furni:");
@@ -1150,7 +1393,7 @@ class MessageTable {
                 "Gespeicherte Presets (Doppelklick w\u00e4hlt aus):");
         Messages.put("ui.label.selfdonate",
                 "Self-donate:",
-                "Self-donate:");
+                "Selbst spenden:");
         Messages.put("ui.log.chatcommands",
                 "Chat commands still work: :ep [all], :ip [x,y], :abort",
                 "Chat-Kommandos funktionieren weiterhin: :ep [all], :ip [x,y], :abort");

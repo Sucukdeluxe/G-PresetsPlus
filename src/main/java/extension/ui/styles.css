@@ -262,3 +262,39 @@
     -fx-border-color: #4a4a4a;
     -fx-background-color: #323232;
 }
+
+.hint-box-ok {
+    -fx-padding: 8 10 8 10;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-weight: bold;
+}
+
+.g-light .hint-box-ok {
+    -fx-border-color: #2e7d32;
+    -fx-background-color: #e6f4e6;
+    -fx-text-fill: #1b5e20;
+}
+
+.g-dark .hint-box-ok {
+    -fx-border-color: #3fb950;
+    -fx-background-color: #16301c;
+    -fx-text-fill: #7ee08a;
+}
+
+.preset-loaded {
+    -fx-font-weight: bold;
+}
+
+.g-light .list-cell.preset-loaded,
+.g-light .list-cell.preset-loaded:selected {
+    -fx-background-color: #e6f4e6;
+    -fx-text-fill: #1b5e20;
+}
+
+.g-dark .list-cell.preset-loaded,
+.g-dark .list-cell.preset-loaded:selected {
+    -fx-background-color: #16301c;
+    -fx-text-fill: #7ee08a;
+}

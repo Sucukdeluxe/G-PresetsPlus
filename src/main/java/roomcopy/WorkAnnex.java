@@ -8,8 +8,7 @@ import java.util.Set;
 
 public class WorkAnnex {
 
-    private static final int MAX_SIDE = 64;
-    private static final int MAX_TILES = 1024;
+    private static final int MAX_SIDE = 56;
 
     private final String plan;
     private final int doorX;
@@ -166,16 +165,6 @@ public class WorkAnnex {
                 grid[ty][tx] = lowestHeight;
                 tiles.add(FloorPlanSnapshot.tileKey(tx, ty));
             }
-        }
-
-        int walkable = 0;
-        for (int y = 0; y < newHeight; y++) {
-            for (int x = 0; x < newWidth; x++) {
-                if (grid[y][x] != 'x') walkable++;
-            }
-        }
-        if (walkable > MAX_TILES) {
-            return null;
         }
 
         StringBuilder planBuilder = new StringBuilder();

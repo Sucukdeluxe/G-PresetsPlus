@@ -20,6 +20,7 @@ import gearth.extensions.parsers.HPoint;
 import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
 import utils.StateExtractor;
+import roomcopy.BuildEstimate;
 import utils.Utils;
 
 import java.util.*;
@@ -628,7 +629,7 @@ public class GPresetImporter {
         while (state == BuildingImportState.MOVE_FURNITURE && i < moveList.size()) {
             PresetFurni moveFurni = moveList.get(i);
             i++;
-            logProgress(Messages.get("preset.import.progress.move_furni"), i, moveList.size());
+            logProgress(ProgressPhase.MOVE, Messages.get("preset.import.progress.move_furni"), i, moveList.size());
             int realFurniId = realFurniIdMap.get(moveFurni.getFurniId());
 
             if (moveFurni.getState() != null) {
@@ -740,7 +741,7 @@ public class GPresetImporter {
         while (state == BuildingImportState.SETUP_WIRED && i < allWireds.size()) {
             PresetWiredBase wiredBase = allWireds.get(i);
 
-            logProgress(Messages.get("wired.setup.progress"), i + 1, allWireds.size());
+            logProgress(ProgressPhase.WIRED, Messages.get("wired.setup.progress"), i + 1, allWireds.size());
 
             i++;
 
@@ -872,7 +873,7 @@ public class GPresetImporter {
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_FURNITURE) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
 
-            logProgress(Messages.get("preset.import.progress.place_furni"), i + 1, furniDropInfos.size());
+            logProgress(ProgressPhase.PLACE, Messages.get("preset.import.progress.place_furni"), i + 1, furniDropInfos.size());
 
             dropFurni(dropInfo);
             i++;
@@ -1018,35 +1019,45 @@ public class GPresetImporter {
     private void addUnstackables() {
         FurniDataTools furniData = extension.getFurniDataTools();
         List<FurniDropInfo> furniDropInfos = new ArrayList<>();
+        List<String> flatDropKeys = new ArrayList<>();
 
         synchronized (lock) {
+            List<PresetFurni> flatFurni = new ArrayList<>();
             workingPresetConfig.getFurniture().forEach(f -> {
                 if (!furniData.isStackable(f.getClassName())) {
-                    FurniDropInfo dropInfo = new FurniDropInfo(
-                            f.getLocation().getX() + rootLocation.getX(),
-                            f.getLocation().getY() + rootLocation.getY(),
-                            furniData.getFloorTypeId(f.getClassName()),
-                            postConfig.getItemSource(),
-                            f.getRotation());
-
-                    furniDropInfos.add(dropInfo);
-
-                    String key = String.format("%d|%d|%d", dropInfo.getX(), dropInfo.getY(), dropInfo.getTypeId());
-                    if (!expectFurniDrops.containsKey(key))
-                        expectFurniDrops.put(key, new LinkedList<>());
-                    expectFurniDrops.get(key).add(f.getFurniId());
+                    flatFurni.add(f);
                 }
             });
+            sortByStackingOrder(flatFurni, furniData);
+
+            for (PresetFurni f : flatFurni) {
+                FurniDropInfo dropInfo = new FurniDropInfo(
+                        f.getLocation().getX() + rootLocation.getX(),
+                        f.getLocation().getY() + rootLocation.getY(),
+                        furniData.getFloorTypeId(f.getClassName()),
+                        postConfig.getItemSource(),
+                        f.getRotation());
+
+                furniDropInfos.add(dropInfo);
+
+                String key = String.format("%d|%d|%d", dropInfo.getX(), dropInfo.getY(), dropInfo.getTypeId());
+                if (!expectFurniDrops.containsKey(key))
+                    expectFurniDrops.put(key, new LinkedList<>());
+                expectFurniDrops.get(key).add(f.getFurniId());
+                flatDropKeys.add(key);
+            }
         }
 
         int i = 0;
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_UNSTACKABLES) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
-            logProgress(Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
+            logProgress(ProgressPhase.PLACE, Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
             dropFurni(dropInfo);
 
             i++;
         }
+        reportRejectedDrops(flatDropKeys);
+
 //
 //        if (state == WiredImportState.ADD_UNSTACKABLES) {
 //            if (furniDropInfos.size() > 0) Utils.sleep(2500);
@@ -1064,21 +1075,143 @@ public class GPresetImporter {
 
     }
 
+    private void sortByStackingOrder(List<PresetFurni> flatFurni, FurniDataTools furniData) {
+        FlatFurniOrder.sort(flatFurni, furniData);
+        for (FlatFurniOrder.Conflict conflict : FlatFurniOrder.conflicts(flatFurni, furniData)) {
+            extension.getLogger().logKey("preset.import.flat_conflict", "orange",
+                    conflict.x, conflict.y, conflict.below, conflict.above);
+        }
+    }
+
     private static int progressStep(int total) {
         if (total < 100) return 10;
         if (total < 1000) return 50;
-        return 1000;
+        return 100;
     }
 
-    private void logProgress(String what, int done, int total) {
+    private enum ProgressPhase {
+        PLACE,
+        WIRED,
+        MOVE
+    }
+
+    private void logProgress(ProgressPhase phase, String what, int done, int total) {
         if (total <= 0) return;
-        if (done % progressStep(total) == 0 || done == total) {
-            extension.getLogger().log(Messages.get("preset.import.progress.format", what, done, total), "orange");
+        if (done % progressStep(total) != 0 && done != total) {
+            return;
+        }
+
+        int percent = overallPercent(phase, done, total);
+        extension.getLogger().logKey("preset.import.progress.format", "orange", what, done, total);
+        extension.sendVisualChatInfo(
+                Messages.get("preset.import.progress.ingame", what, done, total, percent));
+    }
+
+    private int overallPercent(ProgressPhase phase, int done, int total) {
+        int furni = workingPresetConfig == null ? 0 : workingPresetConfig.getFurniture().size();
+        int wiredCount = 0;
+        if (workingPresetConfig != null && workingPresetConfig.getPresetWireds() != null) {
+            wiredCount = workingPresetConfig.getPresetWireds().getTriggers().size()
+                    + workingPresetConfig.getPresetWireds().getConditions().size()
+                    + workingPresetConfig.getPresetWireds().getEffects().size()
+                    + workingPresetConfig.getPresetWireds().getSelectors().size()
+                    + workingPresetConfig.getPresetWireds().getAddons().size()
+                    + workingPresetConfig.getPresetWireds().getVariables().size();
+        }
+
+        boolean fromBc = postConfig.getItemSource() == ItemSource.ONLY_BC
+                || postConfig.getItemSource() == ItemSource.PREFER_BC;
+        BuildEstimate estimate = BuildEstimate.of(Math.max(furni, total), wiredCount,
+                fromBc, Utils.getExtraSleepTime());
+
+        long overall = estimate.totalMs;
+        if (overall <= 0) {
+            return total <= 0 ? 0 : (int) Math.round(100.0 * done / total);
+        }
+
+        long base;
+        long segment;
+        switch (phase) {
+            case WIRED:
+                base = estimate.dropMs;
+                segment = estimate.wiredMs;
+                break;
+            case MOVE:
+                base = estimate.dropMs + estimate.wiredMs;
+                segment = estimate.moveMs;
+                break;
+            default:
+                base = 0;
+                segment = estimate.dropMs;
+                break;
+        }
+
+        double fraction = total <= 0 ? 1 : Math.min(1.0, (double) done / total);
+        long reached = base + Math.round(segment * fraction);
+        return (int) Math.max(0, Math.min(100, Math.round(100.0 * reached / overall)));
+    }
+
+    private static String tileOf(String dropKey) {
+        try {
+            String[] parts = dropKey.split("\\|");
+            return parts[0] + "," + parts[1];
+        } catch (Throwable t) {
+            return dropKey;
+        }
+    }
+
+    private void reportRejectedDrops(List<String> dropKeys) {
+        if (dropKeys.isEmpty()) {
+            return;
+        }
+        Utils.sleep(1200);
+
+        List<String> rejected = new ArrayList<>();
+        synchronized (lock) {
+            for (String key : dropKeys) {
+                LinkedList<Integer> pending = expectFurniDrops.get(key);
+                if (pending == null || pending.isEmpty()) {
+                    continue;
+                }
+                for (int i = 0; i < pending.size(); i++) {
+                    rejected.add(key);
+                }
+            }
+        }
+        if (rejected.isEmpty()) {
+            return;
+        }
+
+        extension.getLogger().logKey("preset.import.rejected.header", "red", rejected.size());
+        Map<String, Integer> seen = new LinkedHashMap<>();
+        for (String key : rejected) {
+            seen.put(key, seen.getOrDefault(key, 0) + 1);
+        }
+        for (Map.Entry<String, Integer> entry : seen.entrySet()) {
+            extension.getLogger().log("   " + describeDropKey(entry.getKey())
+                    + (entry.getValue() > 1 ? " x" + entry.getValue() : ""), "red");
+        }
+        extension.getLogger().logKey("preset.import.rejected.hint", "orange");
+    }
+
+    private String describeDropKey(String key) {
+        try {
+            String[] parts = key.split("\\|");
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
+            int typeId = Integer.parseInt(parts[2]);
+            FurniDataTools furniData = extension.getFurniDataTools();
+            String className = furniData == null ? null : furniData.getFloorItemName(typeId);
+            return Messages.get("preset.import.rejected.item",
+                    className != null ? className : ("typeId " + typeId), x, y);
+        } catch (Throwable t) {
+            return key;
         }
     }
 
     private void logMissingDrops() {
         Map<String, Integer> missingByClass = new LinkedHashMap<>();
+        Map<String, List<String>> missingTiles = new LinkedHashMap<>();
         int total = 0;
 
         FurniDataTools furniData = extension.getFurniDataTools();
@@ -1097,11 +1230,18 @@ public class GPresetImporter {
             }
 
             missingByClass.put(className, missingByClass.getOrDefault(className, 0) + count);
+            missingTiles.computeIfAbsent(className, name -> new ArrayList<>()).add(tileOf(entry.getKey()));
         }
 
         extension.getLogger().log(Messages.get("preset.import.missing.header", total), "red");
         for (Map.Entry<String, Integer> entry : missingByClass.entrySet()) {
             extension.getLogger().log(Messages.get("preset.import.missing.item", entry.getKey(), entry.getValue()), "red");
+            List<String> tiles = missingTiles.get(entry.getKey());
+            if (tiles != null && !tiles.isEmpty()) {
+                List<String> shown = tiles.subList(0, Math.min(tiles.size(), 8));
+                extension.getLogger().log("      " + String.join("  ", shown)
+                        + (tiles.size() > shown.size() ? " ..." : ""), "orange");
+            }
         }
         extension.getLogger().log(Messages.get("preset.import.missing.hint"), "orange");
     }

@@ -11,7 +11,9 @@ public class RoomPermissions {
     private final Callback stateChangeCallback;
 
     private boolean canModifyWired;
-    private boolean canMoveFurni;
+    public enum Grant { UNKNOWN, ALLOWED, DENIED }
+
+    private Grant furniGrant = Grant.UNKNOWN;
 
     public RoomPermissions(IExtension extension, Logger logger, Callback stateChangeCallback) {
         this.extension = extension;
@@ -33,12 +35,12 @@ public class RoomPermissions {
     }
 
     private void onYouAreController(HMessage msg) {
-        canMoveFurni = true;
+        furniGrant = Grant.ALLOWED;
         stateChangeCallback.call();
     }
 
     private void onYouAreNotController(HMessage msg) {
-        canMoveFurni = false;
+        furniGrant = Grant.DENIED;
         stateChangeCallback.call();
     }
 
@@ -46,13 +48,21 @@ public class RoomPermissions {
         return canModifyWired;
     }
 
+    public Grant furniGrant() {
+        return furniGrant;
+    }
+
+    public boolean furniExplicitlyDenied() {
+        return furniGrant == Grant.DENIED;
+    }
+
     public boolean canMoveFurni() {
-        return canMoveFurni;
+        return furniGrant == Grant.ALLOWED;
     }
 
     public void clear() {
         canModifyWired = false;
-        canMoveFurni = false;
+        furniGrant = Grant.UNKNOWN;
         stateChangeCallback.call();
     }
 }
