@@ -776,6 +776,12 @@ class MessageTable {
         Messages.put("preset.import.inventory_item_missing_continue",
                 "Couldn't find '%s' in the inventory.. continuing",
                 "'%s' nicht im Inventar gefunden.. es geht weiter");
+        Messages.put("preset.import.unavailable.header",
+                "%d furni could not be placed because they are not available:",
+                "%d M\u00f6bel konnten nicht platziert werden, weil sie nicht verf\u00fcgbar sind:");
+        Messages.put("preset.import.unavailable.hint",
+                "Nothing was sent for these - they have no Builders Club offer and none are in your inventory. Put them in your inventory or switch the item source.",
+                "F\u00fcr diese wurde nichts gesendet - sie haben kein Builders-Club-Angebot und liegen nicht im Inventar. Leg sie ins Inventar oder \u00e4ndere die M\u00f6bel-Quelle.");
         Messages.put("preset.import.rejected.header",
                 "%d furni were rejected by the server while being placed:",
                 "%d M\u00f6bel hat der Server beim Platzieren abgelehnt:");

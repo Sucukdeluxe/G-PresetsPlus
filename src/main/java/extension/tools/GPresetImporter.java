@@ -375,7 +375,7 @@ public class GPresetImporter {
 
     Map<Integer, LinkedList<HInventoryItem>> inventoryCache = new HashMap<>();
 
-    private void dropFurni(FurniDropInfo dropInfo) {
+    private boolean dropFurni(FurniDropInfo dropInfo) {
         FurniDataTools furniData = extension.getFurniDataTools();
 
         int typeId = dropInfo.getTypeId();
@@ -403,7 +403,7 @@ public class GPresetImporter {
                 else {
                     extension.sendVisualChatInfo(Messages.get("preset.import.bc_item_missing_continue", className));
                 }
-                return;
+                return false;
             }
             extension.sendToServer(new HPacket(
                     "BuildersClubPlaceRoomItem",
@@ -427,7 +427,7 @@ public class GPresetImporter {
                 else {
                     extension.sendVisualChatInfo(Messages.get("preset.import.inventory_item_missing_continue", className));
                 }
-                return;
+                return false;
             }
             HInventoryItem item = inventoryItems.pollFirst();
             extension.sendToServer(new HPacket(
@@ -444,6 +444,7 @@ public class GPresetImporter {
 //            Utils.sleep(600);
             Utils.sleep(150);
         }
+        return true;
     }
 
     private void moveFurni(int furniId, int x, int y, int rot, boolean moveStackTile, double height) {
@@ -1049,14 +1050,21 @@ public class GPresetImporter {
         }
 
         int i = 0;
+        List<String> sentKeys = new ArrayList<>();
+        List<String> unavailableKeys = new ArrayList<>();
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_UNSTACKABLES) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
             logProgress(ProgressPhase.PLACE, Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
-            dropFurni(dropInfo);
+            if (dropFurni(dropInfo)) {
+                sentKeys.add(flatDropKeys.get(i));
+            } else {
+                unavailableKeys.add(flatDropKeys.get(i));
+            }
 
             i++;
         }
-        reportRejectedDrops(flatDropKeys);
+        reportUnavailableDrops(unavailableKeys);
+        reportRejectedDrops(sentKeys);
 
 //
 //        if (state == WiredImportState.ADD_UNSTACKABLES) {
@@ -1158,6 +1166,22 @@ public class GPresetImporter {
         } catch (Throwable t) {
             return dropKey;
         }
+    }
+
+    private void reportUnavailableDrops(List<String> dropKeys) {
+        if (dropKeys.isEmpty()) {
+            return;
+        }
+        extension.getLogger().logKey("preset.import.unavailable.header", "red", dropKeys.size());
+        Map<String, Integer> seen = new LinkedHashMap<>();
+        for (String key : dropKeys) {
+            seen.put(key, seen.getOrDefault(key, 0) + 1);
+        }
+        for (Map.Entry<String, Integer> entry : seen.entrySet()) {
+            extension.getLogger().log("   " + describeDropKey(entry.getKey())
+                    + (entry.getValue() > 1 ? " x" + entry.getValue() : ""), "red");
+        }
+        extension.getLogger().logKey("preset.import.unavailable.hint", "orange");
     }
 
     private void reportRejectedDrops(List<String> dropKeys) {

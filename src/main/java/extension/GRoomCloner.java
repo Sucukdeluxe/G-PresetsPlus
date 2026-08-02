@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.1.2",
+        Version =  "1.1.3",
         Author =  "Sucukdeluxe"
 )
 public class GRoomCloner extends ExtensionForm {

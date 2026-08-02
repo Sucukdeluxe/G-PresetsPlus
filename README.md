@@ -19,7 +19,7 @@ It merges two existing extensions: [G-Presets](https://github.com/sirjonasxx/G-P
 - The saved-presets list shows furni and wired counts per preset, and marks the loaded one in green.
 - **Check availability** also estimates how long placing takes and how long the whole build runs, computed from the configured rate limit.
 - Progress is reported in the console **and** in game as bot messages, with the overall percentage weighted by the real duration of each phase.
-- Furni the server refuses are named with class and tile instead of leaving you with Habbo's *"Sorry, you cannot place this item here"*.
+- Furni that do not end up in the room are named with class and tile, and the two reasons are kept apart: **not available** (nothing was sent, because there is no Builders Club offer and none in the inventory) and **refused by the server** — the latter being what Habbo shows as *"Sorry, you cannot place this item here"*.
 - Rename and delete presets from inside the extension; both files of a preset (`.json` and `.roomJson`) are always handled together.
 - English and German, switchable at runtime in the Settings tab - the console log is rewritten in the new language, including lines already printed, and the in-game messages follow too.
 - Chat commands from G-Presets still work: `:ep [all]`, `:ip [x,y]`, `:abort`.
