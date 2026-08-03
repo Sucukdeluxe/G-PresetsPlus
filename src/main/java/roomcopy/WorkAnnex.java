@@ -8,8 +8,6 @@ import java.util.Set;
 
 public class WorkAnnex {
 
-    private static final int MAX_SIDE = 56;
-
     private final String plan;
     private final int doorX;
     private final int doorY;
@@ -141,7 +139,7 @@ public class WorkAnnex {
         int newWidth = Math.max(oldWidth, annexX + side);
         int newHeight = Math.max(oldHeight, annexY + side);
 
-        if (newWidth > MAX_SIDE || newHeight > MAX_SIDE) {
+        if (newWidth * newHeight > FloorPlanSnapshot.MAX_PLAN_TILES) {
             return null;
         }
 

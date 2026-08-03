@@ -33,6 +33,8 @@ public class FloorPlanSnapshot {
 
     public static final int PRESET_ORIGIN = 1;
 
+    public static final int MAX_PLAN_TILES = 3025;
+
     public static FloorPlanSnapshot forPreset(int contentWidth, int contentHeight) {
         int width = Math.max(1, contentWidth) + PRESET_ORIGIN;
         int height = Math.max(1, contentHeight) + PRESET_ORIGIN;

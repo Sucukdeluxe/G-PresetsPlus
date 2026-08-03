@@ -297,8 +297,11 @@ public class CloneOrchestrator {
         int planWidth = maxX + 1;
         int planHeight = maxY + 1;
 
-        if (planWidth > 60 || planHeight > 60) {
-            logger.logKey("preset.newroom.too_large", "red", planWidth, planHeight);
+        int planTiles = (planWidth + FloorPlanSnapshot.PRESET_ORIGIN)
+                * (planHeight + FloorPlanSnapshot.PRESET_ORIGIN);
+        if (planTiles > FloorPlanSnapshot.MAX_PLAN_TILES) {
+            logger.logKey("preset.newroom.too_large", "red", planWidth, planHeight,
+                    planTiles, FloorPlanSnapshot.MAX_PLAN_TILES);
             return false;
         }
         logger.logKey("preset.newroom.summary", "green", presetName, preset.getFurniture().size(), planWidth, planHeight);

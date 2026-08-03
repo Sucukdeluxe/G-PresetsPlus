@@ -375,8 +375,8 @@ class MessageTable {
                 "Preset \"%s\" could not be loaded or is empty",
                 "Preset \"%s\" konnte nicht geladen werden oder ist leer");
         Messages.put("preset.newroom.too_large",
-                "The preset needs %dx%d tiles - that does not fit into a Habbo room",
-                "Das Preset braucht %dx%d Felder - das passt nicht in einen Habbo-Raum");
+                "The preset needs %dx%d, so the floor plan would be %d tiles - a room holds at most %d (55x55)",
+                "Das Preset braucht %dx%d, der Grundriss w\u00e4re also %d Kacheln - ein Raum fasst h\u00f6chstens %d (55x55)");
         Messages.put("preset.newroom.summary",
                 "Preset \"%s\": %d furni, needs %dx%d tiles",
                 "Preset \"%s\": %d M\u00f6bel, braucht %dx%d Felder");
