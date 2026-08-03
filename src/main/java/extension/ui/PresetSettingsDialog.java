@@ -2,6 +2,7 @@ package extension.ui;
 
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -19,6 +20,13 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.json.JSONArray;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import roomcopy.FloorPlanText;
+import roomcopy.FloorPlanSnapshot;
+import javafx.scene.layout.HBox;
 import org.json.JSONObject;
 import roomcopy.FlatCategories;
 import utils.Messages;
@@ -83,8 +91,21 @@ public class PresetSettingsDialog {
     private final ComboBox<Choice> kickRightsBox = new ComboBox<>();
     private final ComboBox<Choice> banRightsBox = new ComboBox<>();
 
+    private final TextArea planArea = new TextArea();
+    private final Label planStatus = new Label();
+    private JSONObject floorPlan;
+
     public PresetSettingsDialog(JSONObject settings) {
+        this(settings, null);
+    }
+
+    public PresetSettingsDialog(JSONObject settings, JSONObject floorPlan) {
         this.settings = settings;
+        this.floorPlan = floorPlan;
+    }
+
+    public JSONObject getFloorPlan() {
+        return floorPlan;
     }
 
     public boolean show(Stage owner, String presetName) {
@@ -107,7 +128,8 @@ public class PresetSettingsDialog {
                 tab("preset.editor.tab.basic", basicPane()),
                 tab("preset.editor.tab.access", accessPane()),
                 tab("preset.editor.tab.hc", hcPane()),
-                tab("preset.editor.tab.mod", modPane()));
+                tab("preset.editor.tab.mod", modPane()),
+                tab("preset.editor.tab.floorplan", floorPlanPane()));
 
         Label header = new Label(Messages.get("preset.editor.header", presetName));
         header.setMinHeight(ROW_HEIGHT);
@@ -321,6 +343,11 @@ public class PresetSettingsDialog {
     }
 
     private void load() {
+        if (floorPlan != null) {
+            planArea.setText(floorPlan.optString("floorPlan", "").replace('\r', '\n'));
+        }
+        updatePlanStatus();
+
         nameField.setText(settings.optString("name", ""));
         descriptionField.setText(settings.optString("description", ""));
 
@@ -373,9 +400,92 @@ public class PresetSettingsDialog {
         select(banRightsBox, settings.optInt("whoCanBan", 0));
     }
 
+    private Node floorPlanPane() {
+        planArea.setPrefRowCount(12);
+        planArea.setStyle("-fx-font-family: 'Consolas', 'Courier New', monospace; -fx-font-size: 11px;");
+        planArea.setPromptText(Messages.get("preset.editor.floorplan.prompt"));
+        planArea.textProperty().addListener((observable, old, value) -> updatePlanStatus());
+
+        Button load = new Button(Messages.get("preset.editor.floorplan.load"));
+        load.setOnAction(event -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle(Messages.get("preset.editor.floorplan.load"));
+            chooser.getExtensionFilters().add(
+                    new FileChooser.ExtensionFilter(Messages.get("preset.import.filter.floorplan"), "*.txt", "*.*"));
+            File chosen = chooser.showOpenDialog(planArea.getScene() == null
+                    ? null : planArea.getScene().getWindow());
+            if (chosen == null) {
+                return;
+            }
+            try {
+                planArea.setText(new String(Files.readAllBytes(chosen.toPath()), StandardCharsets.UTF_8));
+            } catch (Throwable t) {
+                planStatus.setText(Messages.get("preset.editor.floorplan.read_failed", chosen.getName()));
+            }
+        });
+
+        Button clear = new Button(Messages.get("preset.editor.floorplan.clear"));
+        clear.setOnAction(event -> planArea.clear());
+
+        planStatus.setWrapText(true);
+        planStatus.setMinHeight(ROW_HEIGHT);
+
+        Label note = note("preset.editor.floorplan.note");
+
+        VBox box = new VBox(8, note, planArea, new HBox(8, load, clear), planStatus);
+        box.setPadding(new Insets(10));
+        VBox.setVgrow(planArea, Priority.ALWAYS);
+        return box;
+    }
+
+    private void updatePlanStatus() {
+        String text = planArea.getText();
+        if (text == null || text.trim().isEmpty()) {
+            planStatus.setText(Messages.get("preset.editor.floorplan.none"));
+            return;
+        }
+        FloorPlanText parsed = FloorPlanText.parse(text);
+        if (parsed == null) {
+            planStatus.setText(Messages.get("preset.editor.floorplan.invalid"));
+            return;
+        }
+        if (parsed.width > FloorPlanSnapshot.MAX_PLAN_SIDE
+                || parsed.height > FloorPlanSnapshot.MAX_PLAN_SIDE
+                || parsed.width * parsed.height > FloorPlanSnapshot.MAX_PLAN_TILES) {
+            planStatus.setText(Messages.get("preset.editor.floorplan.too_large",
+                    parsed.width, parsed.height, parsed.width * parsed.height,
+                    FloorPlanSnapshot.MAX_PLAN_SIDE, FloorPlanSnapshot.MAX_PLAN_TILES));
+            return;
+        }
+        if (parsed.violatesDoorRule()) {
+            planStatus.setText(Messages.get("preset.editor.floorplan.door_rule"));
+            return;
+        }
+        planStatus.setText(Messages.get("preset.editor.floorplan.ok",
+                parsed.width, parsed.height, parsed.walkableTiles,
+                parsed.doorX, parsed.doorY));
+    }
+
     private String validate() {
         if (nameField.getText().trim().isEmpty()) {
             return Messages.get("preset.editor.error.name");
+        }
+        String planText = planArea.getText();
+        if (planText != null && !planText.trim().isEmpty()) {
+            FloorPlanText parsed = FloorPlanText.parse(planText);
+            if (parsed == null) {
+                return Messages.get("preset.editor.floorplan.invalid");
+            }
+            if (parsed.width > FloorPlanSnapshot.MAX_PLAN_SIDE
+                    || parsed.height > FloorPlanSnapshot.MAX_PLAN_SIDE
+                    || parsed.width * parsed.height > FloorPlanSnapshot.MAX_PLAN_TILES) {
+                return Messages.get("preset.editor.floorplan.too_large",
+                        parsed.width, parsed.height, parsed.width * parsed.height,
+                        FloorPlanSnapshot.MAX_PLAN_SIDE, FloorPlanSnapshot.MAX_PLAN_TILES);
+            }
+            if (parsed.violatesDoorRule()) {
+                return Messages.get("preset.editor.floorplan.door_rule");
+            }
         }
         if (parsePositive(sleepSeconds.getText()) < 0 || parsePositive(kickSeconds.getText()) < 0) {
             return Messages.get("preset.editor.error.seconds");
@@ -401,6 +511,14 @@ public class PresetSettingsDialog {
     }
 
     private void store() {
+        String planText = planArea.getText();
+        if (planText == null || planText.trim().isEmpty()) {
+            floorPlan = null;
+        } else {
+            FloorPlanText parsed = FloorPlanText.parse(planText);
+            floorPlan = parsed == null ? floorPlan : parsed.toFloorPlanJson();
+        }
+
         settings.put("name", nameField.getText().trim());
         settings.put("description", descriptionField.getText().trim());
 

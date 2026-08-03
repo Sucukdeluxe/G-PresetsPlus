@@ -32,6 +32,53 @@ public class BuildEstimate {
         return new BuildEstimate(furniCount, wiredCount, drop, move, wired);
     }
 
+    public enum Phase {
+        PLACE_FLAT,
+        PLACE_MAIN,
+        WIRED,
+        MOVE
+    }
+
+    public int percent(Phase phase, int done, int total, int flatCount, int furniTotal) {
+        if (totalMs <= 0) {
+            return total <= 0 ? 0 : clamp((int) Math.round(100.0 * done / total));
+        }
+
+        long base;
+        long segment;
+        double fraction;
+        switch (phase) {
+            case WIRED:
+                base = dropMs;
+                segment = wiredMs;
+                fraction = total <= 0 ? 1 : (double) done / total;
+                break;
+            case MOVE:
+                base = dropMs + wiredMs;
+                segment = moveMs;
+                fraction = total <= 0 ? 1 : (double) done / total;
+                break;
+            case PLACE_MAIN:
+                base = 0;
+                segment = dropMs;
+                fraction = furniTotal <= 0 ? 1 : (double) (flatCount + done) / furniTotal;
+                break;
+            default:
+                base = 0;
+                segment = dropMs;
+                fraction = furniTotal <= 0 ? 1 : (double) done / furniTotal;
+                break;
+        }
+
+        fraction = Math.max(0, Math.min(1.0, fraction));
+        long reached = base + Math.round(segment * fraction);
+        return clamp((int) Math.round(100.0 * reached / totalMs));
+    }
+
+    private static int clamp(int value) {
+        return Math.max(0, Math.min(100, value));
+    }
+
     public static String format(long millis) {
         long seconds = Math.max(0, millis) / 1000;
         long hours = seconds / 3600;

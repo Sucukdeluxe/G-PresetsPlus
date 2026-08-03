@@ -103,6 +103,12 @@ public class WorkAnnex {
     private int annexOriginX;
     private int annexOriginY;
 
+    private static boolean planFits(int width, int height) {
+        return width <= FloorPlanSnapshot.MAX_PLAN_SIDE
+                && height <= FloorPlanSnapshot.MAX_PLAN_SIDE
+                && width * height <= FloorPlanSnapshot.MAX_PLAN_TILES;
+    }
+
     public static WorkAnnex build(FloorPlanSnapshot source, int stackTileDimension) {
         String[] sourceRows = source.rows();
         int oldWidth = 0;
@@ -132,15 +138,33 @@ public class WorkAnnex {
             lowestHeight = '0';
         }
 
+        int maxWalkableY = -1;
+        int anchorX = -1;
+        for (int y = 0; y < oldHeight; y++) {
+            for (int x = 0; x < sourceRows[y].length(); x++) {
+                if (!source.isWalkable(x, y)) continue;
+                if (y > maxWalkableY) {
+                    maxWalkableY = y;
+                    anchorX = x;
+                }
+            }
+        }
+
         int side = Math.max(4, Math.max(1, stackTileDimension) + 2);
+
         int annexX = maxWalkableX + 1;
         int annexY = anchorY;
-
         int newWidth = Math.max(oldWidth, annexX + side);
         int newHeight = Math.max(oldHeight, annexY + side);
 
-        if (newWidth * newHeight > FloorPlanSnapshot.MAX_PLAN_TILES) {
-            return null;
+        if (!planFits(newWidth, newHeight)) {
+            annexY = maxWalkableY + 1;
+            annexX = Math.max(1, Math.min(anchorX, oldWidth - side));
+            newWidth = Math.max(oldWidth, annexX + side);
+            newHeight = Math.max(oldHeight, annexY + side);
+            if (!planFits(newWidth, newHeight)) {
+                return null;
+            }
         }
 
         char[][] grid = new char[newHeight][newWidth];

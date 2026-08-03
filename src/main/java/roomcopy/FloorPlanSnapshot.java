@@ -35,9 +35,15 @@ public class FloorPlanSnapshot {
 
     public static final int MAX_PLAN_TILES = 3025;
 
+    public static final int MAX_PLAN_SIDE = 64;
+
     public static FloorPlanSnapshot forPreset(int contentWidth, int contentHeight) {
-        int width = Math.max(1, contentWidth) + PRESET_ORIGIN;
-        int height = Math.max(1, contentHeight) + PRESET_ORIGIN;
+        return forPreset(contentWidth, contentHeight, PRESET_ORIGIN);
+    }
+
+    public static FloorPlanSnapshot forPreset(int contentWidth, int contentHeight, int shift) {
+        int width = Math.max(1, contentWidth) + shift;
+        int height = Math.max(1, contentHeight) + shift;
 
         StringBuilder plan = new StringBuilder();
         for (int y = 0; y < height; y++) {

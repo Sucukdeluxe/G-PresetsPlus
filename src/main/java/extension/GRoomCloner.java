@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 @ExtensionInfo(
         Title =  "G-PresetsPlus",
         Description =  "Clone a whole room with settings, floor plan, furni and wired, or build a preset into a fresh room",
-        Version =  "1.1.4",
+        Version =  "1.1.6",
         Author =  "Sucukdeluxe"
 )
 public class GRoomCloner extends ExtensionForm {
@@ -757,11 +757,17 @@ public class GRoomCloner extends ExtensionForm {
             settings = seedRoomSettings(root.optJSONObject("roomData"), selected);
         }
 
-        if (!new PresetSettingsDialog(settings).show(primaryStage, selected)) {
+        PresetSettingsDialog dialog = new PresetSettingsDialog(settings, root.optJSONObject("floorPlan"));
+        if (!dialog.show(primaryStage, selected)) {
             return;
         }
 
         root.put("roomSettings", settings);
+        if (dialog.getFloorPlan() == null) {
+            root.remove("floorPlan");
+        } else {
+            root.put("floorPlan", dialog.getFloorPlan());
+        }
         try (Writer writer = new OutputStreamWriter(
                 Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             writer.write(root.toString(4));

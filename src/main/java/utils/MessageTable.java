@@ -87,6 +87,39 @@ class MessageTable {
         Messages.put("preset.editor.save_failed",
                 "Could not save the room settings (%s)",
                 "Raum-Settings konnten nicht gespeichert werden (%s)");
+        Messages.put("preset.editor.tab.floorplan",
+                "Floor plan",
+                "Grundriss");
+        Messages.put("preset.editor.floorplan.note",
+                "One row per line, x is a wall or a hole, 0-9 and a-z are floor heights. Empty means the preset carries no floor plan and a plain rectangle is generated when a room is created.",
+                "Eine Zeile pro Reihe, x ist Wand oder Loch, 0-9 und a-z sind Bodenh\u00f6hen. Leer hei\u00dft, das Preset bringt keinen Grundriss mit und beim Anlegen eines Raums wird ein einfaches Rechteck erzeugt.");
+        Messages.put("preset.editor.floorplan.prompt",
+                "xxxxxxxx\nx000000x\nx000000x\nxxxxxxxx",
+                "xxxxxxxx\nx000000x\nx000000x\nxxxxxxxx");
+        Messages.put("preset.editor.floorplan.load",
+                "Load from file...",
+                "Aus Datei laden...");
+        Messages.put("preset.editor.floorplan.clear",
+                "Remove plan",
+                "Grundriss entfernen");
+        Messages.put("preset.editor.floorplan.none",
+                "No floor plan stored",
+                "Kein Grundriss hinterlegt");
+        Messages.put("preset.editor.floorplan.invalid",
+                "This is not a readable floor plan",
+                "Das ist kein lesbarer Grundriss");
+        Messages.put("preset.editor.floorplan.door_rule",
+                "The first row and the first column may hold at most one walkable tile - that is where the door goes",
+                "Die erste Zeile und die erste Spalte d\u00fcrfen h\u00f6chstens eine begehbare Kachel haben - dort sitzt die T\u00fcr");
+        Messages.put("preset.editor.floorplan.too_large",
+                "%dx%d = %d tiles - a room may be at most %d per side and %d tiles in total",
+                "%dx%d = %d Kacheln - ein Raum darf h\u00f6chstens %d pro Seite und %d Kacheln insgesamt haben");
+        Messages.put("preset.editor.floorplan.ok",
+                "%dx%d, %d walkable tiles, door at %d,%d",
+                "%dx%d, %d begehbare Kacheln, T\u00fcr auf %d,%d");
+        Messages.put("preset.editor.floorplan.read_failed",
+                "Could not read %s",
+                "%s konnte nicht gelesen werden");
         Messages.put("preset.editor.tab.basic",
                 "Basic",
                 "Allgemein");
@@ -374,6 +407,9 @@ class MessageTable {
         Messages.put("preset.newroom.load_failed",
                 "Preset \"%s\" could not be loaded or is empty",
                 "Preset \"%s\" konnte nicht geladen werden oder ist leer");
+        Messages.put("preset.newroom.too_wide",
+                "The floor plan would be %dx%d - a room may be at most %d tiles wide and %d high",
+                "Der Grundriss w\u00e4re %dx%d - ein Raum darf h\u00f6chstens %d Kacheln breit und %d hoch sein");
         Messages.put("preset.newroom.too_large",
                 "The preset needs %dx%d, so the floor plan would be %d tiles - a room holds at most %d (55x55)",
                 "Das Preset braucht %dx%d, der Grundriss w\u00e4re also %d Kacheln - ein Raum fasst h\u00f6chstens %d (55x55)");

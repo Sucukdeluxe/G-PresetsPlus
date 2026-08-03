@@ -297,8 +297,24 @@ public class CloneOrchestrator {
         int planWidth = maxX + 1;
         int planHeight = maxY + 1;
 
-        int planTiles = (planWidth + FloorPlanSnapshot.PRESET_ORIGIN)
-                * (planHeight + FloorPlanSnapshot.PRESET_ORIGIN);
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        for (Long tile : presetFootprints(preset, false)) {
+            minX = Math.min(minX, (int) (tile >> 32));
+            minY = Math.min(minY, (int) (tile & 0xffffffffL));
+        }
+        int shift = minX > FloorPlanSnapshot.PRESET_ORIGIN && minY > FloorPlanSnapshot.PRESET_ORIGIN
+                ? 0 : FloorPlanSnapshot.PRESET_ORIGIN;
+
+        int generatedWidth = planWidth + shift;
+        int generatedHeight = planHeight + shift;
+        int planTiles = generatedWidth * generatedHeight;
+        if (generatedWidth > FloorPlanSnapshot.MAX_PLAN_SIDE
+                || generatedHeight > FloorPlanSnapshot.MAX_PLAN_SIDE) {
+            logger.logKey("preset.newroom.too_wide", "red", generatedWidth, generatedHeight,
+                    FloorPlanSnapshot.MAX_PLAN_SIDE, FloorPlanSnapshot.MAX_PLAN_SIDE);
+            return false;
+        }
         if (planTiles > FloorPlanSnapshot.MAX_PLAN_TILES) {
             logger.logKey("preset.newroom.too_large", "red", planWidth, planHeight,
                     planTiles, FloorPlanSnapshot.MAX_PLAN_TILES);
@@ -319,9 +335,9 @@ public class CloneOrchestrator {
                 logger.logKey("preset.newroom.plan_too_small", "orange", planWidth, planHeight, basePlan.width(), basePlan.height());
             }
         } else {
-            basePlan = FloorPlanSnapshot.forPreset(planWidth, planHeight);
+            basePlan = FloorPlanSnapshot.forPreset(planWidth, planHeight, shift);
             snapshot = new RoomSnapshot(RoomSettingsSnapshot.defaults(presetName), basePlan, null);
-            presetRoot = new HPoint(FloorPlanSnapshot.PRESET_ORIGIN, FloorPlanSnapshot.PRESET_ORIGIN);
+            presetRoot = new HPoint(shift, shift);
             logger.logKey("preset.newroom.generated_plan", "blue", basePlan.width(), basePlan.height());
         }
 

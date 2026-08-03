@@ -871,12 +871,18 @@ public class GPresetImporter {
         }
 
         int i = 0;
+        Set<String> mainKeys = new LinkedHashSet<>();
+        Map<String, Integer> neverSent = new LinkedHashMap<>();
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_FURNITURE) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
 
-            logProgress(ProgressPhase.PLACE, Messages.get("preset.import.progress.place_furni"), i + 1, furniDropInfos.size());
+            logProgress(ProgressPhase.PLACE_MAIN, Messages.get("preset.import.progress.place_furni"), i + 1, furniDropInfos.size());
 
-            dropFurni(dropInfo);
+            String key = String.format("%d|%d|%d", dropInfo.getX(), dropInfo.getY(), dropInfo.getTypeId());
+            mainKeys.add(key);
+            if (!dropFurni(dropInfo)) {
+                neverSent.put(key, neverSent.getOrDefault(key, 0) + 1);
+            }
             i++;
         }
 
@@ -889,6 +895,8 @@ public class GPresetImporter {
                     done = state != BuildingImportState.ADD_FURNITURE || expectFurniDrops.isEmpty() || j++ > 7;
                 }
             } while (!done);
+
+            reportOutstandingDrops(mainKeys, neverSent, false);
 
             synchronized (lock) {
                 if (state == BuildingImportState.ADD_FURNITURE) {
@@ -1030,6 +1038,7 @@ public class GPresetImporter {
                 }
             });
             sortByStackingOrder(flatFurni, furniData);
+            flatFurniPlaced = flatFurni.size();
 
             for (PresetFurni f : flatFurni) {
                 FurniDropInfo dropInfo = new FurniDropInfo(
@@ -1050,21 +1059,21 @@ public class GPresetImporter {
         }
 
         int i = 0;
-        List<String> sentKeys = new ArrayList<>();
-        List<String> unavailableKeys = new ArrayList<>();
+        Map<String, Integer> neverSent = new LinkedHashMap<>();
         while (i < furniDropInfos.size() && state == BuildingImportState.ADD_UNSTACKABLES) {
             FurniDropInfo dropInfo = furniDropInfos.get(i);
-            logProgress(ProgressPhase.PLACE, Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
-            if (dropFurni(dropInfo)) {
-                sentKeys.add(flatDropKeys.get(i));
-            } else {
-                unavailableKeys.add(flatDropKeys.get(i));
+            logProgress(ProgressPhase.PLACE_FLAT, Messages.get("preset.import.progress.place_multitile"), i + 1, furniDropInfos.size());
+            if (!dropFurni(dropInfo)) {
+                String key = flatDropKeys.get(i);
+                neverSent.put(key, neverSent.getOrDefault(key, 0) + 1);
             }
 
             i++;
         }
-        reportUnavailableDrops(unavailableKeys);
-        reportRejectedDrops(sentKeys);
+        if (!furniDropInfos.isEmpty()) {
+            Utils.sleep(1200);
+        }
+        reportOutstandingDrops(new LinkedHashSet<>(flatDropKeys), neverSent, true);
 
 //
 //        if (state == WiredImportState.ADD_UNSTACKABLES) {
@@ -1098,10 +1107,13 @@ public class GPresetImporter {
     }
 
     private enum ProgressPhase {
-        PLACE,
+        PLACE_FLAT,
+        PLACE_MAIN,
         WIRED,
         MOVE
     }
+
+    private volatile int flatFurniPlaced = 0;
 
     private void logProgress(ProgressPhase phase, String what, int done, int total) {
         if (total <= 0) return;
@@ -1132,31 +1144,8 @@ public class GPresetImporter {
         BuildEstimate estimate = BuildEstimate.of(Math.max(furni, total), wiredCount,
                 fromBc, Utils.getExtraSleepTime());
 
-        long overall = estimate.totalMs;
-        if (overall <= 0) {
-            return total <= 0 ? 0 : (int) Math.round(100.0 * done / total);
-        }
-
-        long base;
-        long segment;
-        switch (phase) {
-            case WIRED:
-                base = estimate.dropMs;
-                segment = estimate.wiredMs;
-                break;
-            case MOVE:
-                base = estimate.dropMs + estimate.wiredMs;
-                segment = estimate.moveMs;
-                break;
-            default:
-                base = 0;
-                segment = estimate.dropMs;
-                break;
-        }
-
-        double fraction = total <= 0 ? 1 : Math.min(1.0, (double) done / total);
-        long reached = base + Math.round(segment * fraction);
-        return (int) Math.max(0, Math.min(100, Math.round(100.0 * reached / overall)));
+        return estimate.percent(BuildEstimate.Phase.valueOf(phase.name()),
+                done, total, flatFurniPlaced, furni);
     }
 
     private static String tileOf(String dropKey) {
@@ -1168,54 +1157,61 @@ public class GPresetImporter {
         }
     }
 
-    private void reportUnavailableDrops(List<String> dropKeys) {
-        if (dropKeys.isEmpty()) {
-            return;
-        }
-        extension.getLogger().logKey("preset.import.unavailable.header", "red", dropKeys.size());
-        Map<String, Integer> seen = new LinkedHashMap<>();
-        for (String key : dropKeys) {
-            seen.put(key, seen.getOrDefault(key, 0) + 1);
-        }
-        for (Map.Entry<String, Integer> entry : seen.entrySet()) {
-            extension.getLogger().log("   " + describeDropKey(entry.getKey())
-                    + (entry.getValue() > 1 ? " x" + entry.getValue() : ""), "red");
-        }
-        extension.getLogger().logKey("preset.import.unavailable.hint", "orange");
-    }
+    private void reportOutstandingDrops(Set<String> phaseKeys, Map<String, Integer> neverSent,
+                                        boolean withTile) {
+        Map<String, Integer> unavailable = new LinkedHashMap<>();
+        Map<String, Integer> rejected = new LinkedHashMap<>();
 
-    private void reportRejectedDrops(List<String> dropKeys) {
-        if (dropKeys.isEmpty()) {
-            return;
-        }
-        Utils.sleep(1200);
-
-        List<String> rejected = new ArrayList<>();
         synchronized (lock) {
-            for (String key : dropKeys) {
+            for (String key : phaseKeys) {
                 LinkedList<Integer> pending = expectFurniDrops.get(key);
-                if (pending == null || pending.isEmpty()) {
+                int outstanding = pending == null ? 0 : pending.size();
+                if (outstanding <= 0) {
                     continue;
                 }
-                for (int i = 0; i < pending.size(); i++) {
-                    rejected.add(key);
+                int missing = Math.min(outstanding, neverSent.getOrDefault(key, 0));
+                if (missing > 0) {
+                    unavailable.put(key, missing);
+                }
+                if (outstanding - missing > 0) {
+                    rejected.put(key, outstanding - missing);
                 }
             }
         }
-        if (rejected.isEmpty()) {
+
+        logDropGroup("preset.import.unavailable.header", "preset.import.unavailable.hint",
+                unavailable, withTile);
+        logDropGroup("preset.import.rejected.header", "preset.import.rejected.hint",
+                rejected, withTile);
+    }
+
+    private void logDropGroup(String headerKey, String hintKey,
+                              Map<String, Integer> group, boolean withTile) {
+        if (group.isEmpty()) {
             return;
         }
-
-        extension.getLogger().logKey("preset.import.rejected.header", "red", rejected.size());
-        Map<String, Integer> seen = new LinkedHashMap<>();
-        for (String key : rejected) {
-            seen.put(key, seen.getOrDefault(key, 0) + 1);
+        int total = 0;
+        for (Integer count : group.values()) {
+            total += count;
         }
-        for (Map.Entry<String, Integer> entry : seen.entrySet()) {
-            extension.getLogger().log("   " + describeDropKey(entry.getKey())
+        extension.getLogger().logKey(headerKey, "red", total);
+        for (Map.Entry<String, Integer> entry : group.entrySet()) {
+            String label = withTile ? describeDropKey(entry.getKey()) : classOfDropKey(entry.getKey());
+            extension.getLogger().log("   " + label
                     + (entry.getValue() > 1 ? " x" + entry.getValue() : ""), "red");
         }
-        extension.getLogger().logKey("preset.import.rejected.hint", "orange");
+        extension.getLogger().logKey(hintKey, "orange");
+    }
+
+    private String classOfDropKey(String key) {
+        try {
+            int typeId = Integer.parseInt(key.split("\\|")[2]);
+            FurniDataTools furniData = extension.getFurniDataTools();
+            String className = furniData == null ? null : furniData.getFloorItemName(typeId);
+            return className != null ? className : ("typeId " + typeId);
+        } catch (Throwable t) {
+            return key;
+        }
     }
 
     private String describeDropKey(String key) {
@@ -1287,6 +1283,7 @@ public class GPresetImporter {
             }
 
             lastImportSucceeded = false;
+            flatFurniPlaced = 0;
             programmatic = true;
             preferredStackTileLocation = preferredStackTile;
             prepare();
