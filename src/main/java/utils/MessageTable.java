@@ -599,6 +599,33 @@ class MessageTable {
         Messages.put("floorplan.verified",
                 "Floor plan verified: the room really is %sx%s with %s walkable tiles",
                 "Floorplan gepr\u00fcft: der Raum ist wirklich %sx%s mit %s begehbaren Kacheln");
+        Messages.put("floorplan.room_not_settled",
+                "The room entry did not settle within 8 seconds - writing the floor plan anyway",
+                "Der Raumeintritt war nach 8 Sekunden nicht abgeschlossen - der Grundriss wird trotzdem geschrieben");
+        Messages.put("floorplan.check.room_now",
+                "The room is %dx%d right now, model \"%s\"",
+                "Der Raum ist gerade %dx%d, Modell \"%s\"");
+        Messages.put("floorplan.check.summary",
+                "Floor plan check before sending: %dx%d = %d cells, first row %d walkable, first column %d walkable",
+                "Grundriss-Pr\u00fcfung vor dem Senden: %dx%d = %d Zellen, erste Zeile %d begehbar, erste Spalte %d begehbar");
+        Messages.put("floorplan.check.ragged",
+                "The rows of this plan are not all the same length - the server may refuse it",
+                "Die Zeilen dieses Plans sind nicht alle gleich lang - der Server kann ihn deshalb ablehnen");
+        Messages.put("floorplan.check.too_wide",
+                "%dx%d exceeds the %d tiles a room may have per side",
+                "%dx%d \u00fcberschreitet die %d Kacheln, die ein Raum pro Seite haben darf");
+        Messages.put("floorplan.check.too_many",
+                "%d cells exceed the %d a room may have in total",
+                "%d Zellen \u00fcberschreiten die %d, die ein Raum insgesamt haben darf");
+        Messages.put("floorplan.check.door_rule",
+                "Door rule broken: first row has %d walkable tiles, first column %d - at most one is allowed",
+                "T\u00fcrregel verletzt: erste Zeile hat %d begehbare Kacheln, erste Spalte %d - erlaubt ist h\u00f6chstens eine");
+        Messages.put("floorplan.check.door_blocked",
+                "The door tile %d,%d is not walkable in this plan",
+                "Die T\u00fcrkachel %d,%d ist in diesem Plan nicht begehbar");
+        Messages.put("floorplan.no_answer",
+                "The server did not answer the %dx%d floor plan at all. Room model \"%s\". Everything above passed the local checks, so the refusal comes from the server - most likely the room model is too small for a plan this size, or the floor plan editor is not available on this account.",
+                "Der Server hat auf den %dx%d-Grundriss gar nicht geantwortet. Raum-Modell \"%s\". Alles oben hat die \u00f6rtlichen Pr\u00fcfungen bestanden, die Ablehnung kommt also vom Server - am ehesten ist das Raum-Modell zu klein f\u00fcr einen Plan dieser Gr\u00f6\u00dfe, oder der Grundriss-Editor steht f\u00fcr diesen Account nicht zur Verf\u00fcgung.");
         Messages.put("floorplan.mismatch",
                 "The server kept a different floor plan - sent %sx%s with %s tiles, room has %sx%s with %s. Retrying (%s/%s)",
                 "Der Server behielt einen anderen Floorplan - gesendet %sx%s mit %s Kacheln, Raum hat %sx%s mit %s. Neuer Versuch (%s/%s)");

@@ -992,6 +992,13 @@ public class CloneOrchestrator {
         int expectedWidth = planWidth(expectedPlan);
         int expectedTiles = walkableTiles(expectedPlan);
 
+        int expectedDoorX = annex != null ? annex.getDoorX() : snapshot.floorPlan.doorX;
+        int expectedDoorY = annex != null ? annex.getDoorY() : snapshot.floorPlan.doorY;
+        waitForRoomSettled();
+        logger.logKey("floorplan.check.room_now", "blue",
+                extension.getFloorState().planWidth(), extension.getFloorState().planHeight(), roomModel);
+        describePlanBeforeSending(expectedPlan, expectedDoorX, expectedDoorY);
+
         for (int attempt = 1; attempt <= FLOORPLAN_ATTEMPTS; attempt++) {
             Executor.AwaitingPacket floorHeightMap =
                     new Executor.AwaitingPacket("FloorHeightMap", HMessage.Direction.TOCLIENT, 20000);
@@ -1012,7 +1019,8 @@ public class CloneOrchestrator {
 
             executor.awaitPacketList(floorHeightMap, objects);
             if (floorHeightMap.getPacket() == null) {
-                logger.logKey("floorplan.not_confirmed", "red", roomModel);
+                    logger.logKey("floorplan.no_answer", "red", expectedWidth,
+                        planHeight(expectedPlan), roomModel);
                 return false;
             }
 
@@ -1037,6 +1045,73 @@ public class CloneOrchestrator {
 
         logger.logKey("floorplan.never_applied", "red");
         return false;
+    }
+
+    private void waitForRoomSettled() {
+        long deadline = System.currentTimeMillis() + 8000;
+        int stable = 0;
+        while (System.currentTimeMillis() < deadline) {
+            if (extension.getFloorState().inRoom()) {
+                stable++;
+                if (stable >= 4) {
+                    return;
+                }
+            } else {
+                stable = 0;
+            }
+            Utils.sleep(250);
+        }
+        logger.logKey("floorplan.room_not_settled", "orange");
+    }
+
+    private void describePlanBeforeSending(String plan, int doorX, int doorY) {
+        String[] rows = plan.split("\r");
+        int width = 0;
+        boolean ragged = false;
+        for (String row : rows) {
+            if (width != 0 && row.length() != width) {
+                ragged = true;
+            }
+            width = Math.max(width, row.length());
+        }
+        int height = rows.length;
+
+        int firstRowWalkable = 0;
+        if (height > 0) {
+            for (int x = 0; x < rows[0].length(); x++) {
+                if (rows[0].charAt(x) != 'x' && rows[0].charAt(x) != 'X') firstRowWalkable++;
+            }
+        }
+        int firstColumnWalkable = 0;
+        for (String row : rows) {
+            if (row.length() > 0 && row.charAt(0) != 'x' && row.charAt(0) != 'X') firstColumnWalkable++;
+        }
+
+        boolean doorInside = doorY >= 0 && doorY < height
+                && doorX >= 0 && doorX < rows[doorY].length();
+        boolean doorWalkable = doorInside
+                && rows[doorY].charAt(doorX) != 'x' && rows[doorY].charAt(doorX) != 'X';
+
+        logger.logKey("floorplan.check.summary", "blue", width, height, width * height,
+                firstRowWalkable, firstColumnWalkable);
+
+        if (ragged) {
+            logger.logKey("floorplan.check.ragged", "orange");
+        }
+        if (width > FloorPlanSnapshot.MAX_PLAN_SIDE || height > FloorPlanSnapshot.MAX_PLAN_SIDE) {
+            logger.logKey("floorplan.check.too_wide", "orange", width, height,
+                    FloorPlanSnapshot.MAX_PLAN_SIDE);
+        }
+        if (width * height > FloorPlanSnapshot.MAX_PLAN_TILES) {
+            logger.logKey("floorplan.check.too_many", "orange", width * height,
+                    FloorPlanSnapshot.MAX_PLAN_TILES);
+        }
+        if (firstRowWalkable > 1 || firstColumnWalkable > 1) {
+            logger.logKey("floorplan.check.door_rule", "orange", firstRowWalkable, firstColumnWalkable);
+        }
+        if (!doorWalkable) {
+            logger.logKey("floorplan.check.door_blocked", "orange", doorX, doorY);
+        }
     }
 
     private static final int FLOORPLAN_ATTEMPTS = 3;

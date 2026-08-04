@@ -493,6 +493,18 @@ public class FloorState {
         return new ArrayList<>();
     }
 
+    public int planWidth() {
+        synchronized (lock) {
+            return floorplan == null ? 0 : floorplan.length;
+        }
+    }
+
+    public int planHeight() {
+        synchronized (lock) {
+            return floorplan == null || floorplan.length == 0 ? 0 : floorplan[0].length;
+        }
+    }
+
     public char floorHeight(int x, int y) {
         char result;
         synchronized (lock) {
