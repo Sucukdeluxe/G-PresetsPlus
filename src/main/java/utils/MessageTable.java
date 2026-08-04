@@ -461,6 +461,15 @@ class MessageTable {
         Messages.put("annex.remove.send_failed",
                 "The annex could not be removed (sending failed)",
                 "Der Anbau konnte nicht entfernt werden (Senden fehlgeschlagen)");
+        Messages.put("annex.leftovers.picking",
+                "%d furni are still standing in the work area - picking them up so the area can be removed",
+                "%d M\u00f6bel stehen noch im Arbeitsbereich - sie werden aufgehoben, damit er verschwinden kann");
+        Messages.put("annex.leftovers.picked",
+                "   picked up %s at %d,%d",
+                "   %s auf %d,%d aufgehoben");
+        Messages.put("annex.leftovers.stuck",
+                "   %s at %d,%d will not budge",
+                "   %s auf %d,%d l\u00e4sst sich nicht aufheben");
         Messages.put("annex.remove.start",
                 "Removing the work annex and resetting the door",
                 "Entferne den Arbeits-Anbau und setze die T\u00fcr zur\u00fcck");
@@ -626,6 +635,12 @@ class MessageTable {
         Messages.put("inventory.availability.header",
                 "Required furni: ",
                 "Ben\u00f6tigte M\u00f6bel: ");
+        Messages.put("furni.name.unknown_typeid",
+                "Unknown furni (#%d)",
+                "Unbekanntes Möbel (#%d)");
+        Messages.put("furni.name.unknown",
+                "Unknown furni",
+                "Unbekanntes Möbel");
         Messages.put("inventory.availability.item.count",
                 "(%d/%d)",
                 "(%d/%d)");
@@ -818,6 +833,21 @@ class MessageTable {
         Messages.put("preset.import.unavailable.hint",
                 "Nothing was sent for these - they have no Builders Club offer and none are in your inventory. Put them in your inventory or switch the item source.",
                 "F\u00fcr diese wurde nichts gesendet - sie haben kein Builders-Club-Angebot und liegen nicht im Inventar. Leg sie ins Inventar oder \u00e4ndere die M\u00f6bel-Quelle.");
+        Messages.put("preset.import.repair.header",
+                "%d furni had lost their assignment and were moved into place afterwards",
+                "%d M\u00f6bel hatten ihre Zuordnung verloren und wurden nachtr\u00e4glich an ihren Platz geschoben");
+        Messages.put("preset.import.repair.moved",
+                "   %s belonged at %d,%d and was moved there",
+                "   %s geh\u00f6rte auf %d,%d und wurde dorthin geschoben");
+        Messages.put("preset.import.retry.start",
+                "Retrying %d refused furni on the free work tile %d,%d",
+                "Versuche %d abgelehnte M\u00f6bel erneut auf der freien Arbeitskachel %d,%d");
+        Messages.put("preset.import.retry.ok",
+                "%s went down on the second attempt",
+                "%s hat es im zweiten Anlauf geschafft");
+        Messages.put("preset.import.retry.failed",
+                "%s was refused again",
+                "%s wurde erneut abgelehnt");
         Messages.put("preset.import.rejected.header",
                 "%d furni were rejected by the server while being placed:",
                 "%d M\u00f6bel hat der Server beim Platzieren abgelehnt:");
@@ -879,8 +909,8 @@ class MessageTable {
                 "Tile %d,%d: nothing can be placed on %s, so %s will be rejected there",
                 "Kachel %d,%d: auf %s kann nichts liegen, %s wird dort abgelehnt");
         Messages.put("preset.import.progress.format",
-                "%s (%d/%d)",
-                "%s (%d/%d)");
+                "%s (%d/%d) - %d%% done",
+                "%s (%d/%d) - %d%% fertig");
         Messages.put("preset.import.progress.move_furni",
                 "Moving furni into place",
                 "R\u00fccke M\u00f6bel an ihren Platz");

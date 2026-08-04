@@ -1129,8 +1129,7 @@ public class CloneOrchestrator {
             int x = (int) (tile >> 32);
             int y = (int) (tile & 0xffffffffL);
             for (HFloorItem item : extension.getFloorState().getFurniOnTile(x, y)) {
-                String className = extension.getFurniDataTools().getFloorItemName(item.getTypeId());
-                blockers.add((className == null ? Messages.get("preset.furni.unknown_typeid", item.getTypeId()) : className)
+                blockers.add(extension.getFurniDataTools().floorDisplayName(item.getTypeId())
                         + " @" + x + "," + y);
             }
         }
@@ -1169,25 +1168,12 @@ public class CloneOrchestrator {
 
         announce("annex.remove.start");
 
-        Executor.AwaitingPacket floorHeightMap =
-                new Executor.AwaitingPacket("FloorHeightMap", HMessage.Direction.TOCLIENT, 20000);
-        executor.register(floorHeightMap);
-
-        if (!snapshot.floorPlan.applyTo(executor,
-                snapshot.settings.wallThickness, snapshot.settings.floorThickness)) {
-            logger.logKey("annex.remove.send_failed", "orange");
-            return false;
+        if (writeAnnexRemoval(snapshot, annex)) {
+            return true;
         }
 
-        HPacket response = executor.awaitPacket(floorHeightMap);
-        if (response == null) {
-            logger.logKey("annex.remove.no_response", "orange");
-        } else if (!annexStillWalkable(response, annex)) {
-            Utils.sleep(600);
-            logger.logKey("annex.remove.done", "green", snapshot.floorPlan.doorX, snapshot.floorPlan.doorY, snapshot.floorPlan.doorDir);
+        if (clearAnnexTiles(annex) && writeAnnexRemoval(snapshot, annex)) {
             return true;
-        } else {
-            logger.logKey("annex.remove.rejected", "orange");
         }
 
         List<String> blockers = annexBlockers(annex);
@@ -1202,6 +1188,83 @@ public class CloneOrchestrator {
 
         restoreDoorOnly(snapshot, annex);
         logger.logKey("annex.remove.manual_hint", "orange");
+        return false;
+    }
+
+    private boolean writeAnnexRemoval(RoomSnapshot snapshot, WorkAnnex annex) {
+        Executor.AwaitingPacket floorHeightMap =
+                new Executor.AwaitingPacket("FloorHeightMap", HMessage.Direction.TOCLIENT, 20000);
+        executor.register(floorHeightMap);
+
+        if (!snapshot.floorPlan.applyTo(executor,
+                snapshot.settings.wallThickness, snapshot.settings.floorThickness)) {
+            logger.logKey("annex.remove.send_failed", "orange");
+            return false;
+        }
+
+        HPacket response = executor.awaitPacket(floorHeightMap);
+        if (response == null) {
+            logger.logKey("annex.remove.no_response", "orange");
+            return false;
+        }
+        if (annexStillWalkable(response, annex)) {
+            logger.logKey("annex.remove.rejected", "orange");
+            return false;
+        }
+
+        Utils.sleep(600);
+        logger.logKey("annex.remove.done", "green", snapshot.floorPlan.doorX,
+                snapshot.floorPlan.doorY, snapshot.floorPlan.doorDir);
+        return true;
+    }
+
+    private boolean clearAnnexTiles(WorkAnnex annex) {
+        List<HFloorItem> leftovers = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        for (Long tile : annex.getAnnexTiles()) {
+            int x = (int) (tile >> 32);
+            int y = (int) (tile & 0xffffffffL);
+            for (HFloorItem item : extension.getFloorState().getFurniOnTile(x, y)) {
+                if (seen.add(item.getId())) {
+                    leftovers.add(item);
+                }
+            }
+        }
+        if (leftovers.isEmpty()) {
+            return false;
+        }
+
+        logger.logKey("annex.leftovers.picking", "orange", leftovers.size());
+        int removed = 0;
+        for (HFloorItem item : leftovers) {
+            String label = extension.getFurniDataTools().floorDisplayName(item.getTypeId());
+            if (pickUpAnnexFurni(item.getId())) {
+                removed++;
+                logger.logKey("annex.leftovers.picked", "green", label,
+                        item.getTile().getX(), item.getTile().getY());
+            } else {
+                logger.logKey("annex.leftovers.stuck", "orange", label,
+                        item.getTile().getX(), item.getTile().getY());
+            }
+        }
+        Utils.sleep(500);
+        return removed > 0;
+    }
+
+    private boolean pickUpAnnexFurni(int furniId) {
+        if (!stillInRoom(furniId)) {
+            return true;
+        }
+        if (!executor.sendToServer("PickupObject", 2, furniId, false)) {
+            return false;
+        }
+        long deadline = System.currentTimeMillis() + 2500;
+        while (System.currentTimeMillis() < deadline) {
+            if (!stillInRoom(furniId)) {
+                return true;
+            }
+            Utils.sleep(150);
+        }
         return false;
     }
 

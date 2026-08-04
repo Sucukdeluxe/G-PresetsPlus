@@ -43,7 +43,7 @@ public class StackTileBootstrap {
 
         Integer typeId = furniData.getFloorTypeId(className);
         if (typeId == null) {
-            logger.logKey("stacktile.not_in_furnidata", "red", className);
+            logger.logKey("stacktile.not_in_furnidata", "red", furniData.displayName(className));
             return FAILED;
         }
 
@@ -59,12 +59,12 @@ public class StackTileBootstrap {
             if (bcOfferId != -1 && itemSource != ItemSource.ONLY_INVENTORY) {
                 useBc = true;
             } else {
-                logger.logKey("stacktile.none_available", "red", className);
+                logger.logKey("stacktile.none_available", "red", furniData.displayName(className));
                 return FAILED;
             }
         }
 
-        logger.logKey("stacktile.placing", "blue", className, location.getX(), location.getY(), useBc ? Messages.get("stacktile.source.bc") : Messages.get("stacktile.source.inventory"));
+        logger.logKey("stacktile.placing", "blue", furniData.displayName(className), location.getX(), location.getY(), useBc ? Messages.get("stacktile.source.bc") : Messages.get("stacktile.source.inventory"));
 
         Executor.AwaitingPacket added =
                 new Executor.AwaitingPacket("ObjectAdd", HMessage.Direction.TOCLIENT, 5000)

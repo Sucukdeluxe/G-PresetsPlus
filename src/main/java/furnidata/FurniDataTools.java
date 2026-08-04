@@ -1,11 +1,13 @@
 package furnidata;
 
 import furnidata.details.FloorItemDetails;
+import furnidata.details.FurniDetails;
 import furnidata.details.WallItemDetails;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.Callback;
+import utils.Messages;
 
 import java.io.IOException;
 import java.net.URL;
@@ -111,6 +113,73 @@ public class FurniDataTools {
     }
     public WallItemDetails getWallItemDetails(String furniName) {
         return nameToWallItems.get(furniName);
+    }
+
+    public String floorDisplayName(int typeId) {
+        String className = typeIdToNameFloor.get(typeId);
+        return className == null
+                ? Messages.get("furni.name.unknown_typeid", typeId)
+                : displayName(className);
+    }
+
+    public String wallDisplayName(int typeId) {
+        String className = typeIdToNameWall.get(typeId);
+        return className == null
+                ? Messages.get("furni.name.unknown_typeid", typeId)
+                : displayName(className);
+    }
+
+    public String displayName(String furniName) {
+        if (furniName == null) {
+            return Messages.get("furni.name.unknown");
+        }
+
+        FurniDetails details = lookupDetails(furniName);
+        if (details == null || (!notBlank(details.name) && !notBlank(details.description))) {
+            FurniDetails related = furniName.contains("*")
+                    ? lookupDetails(furniName.substring(0, furniName.indexOf('*')))
+                    : lookupDetails(firstVariantOf(furniName));
+            if (related != null && (notBlank(related.name) || notBlank(related.description))) {
+                details = related;
+            }
+        }
+        if (details == null) {
+            return furniName;
+        }
+        if (notBlank(details.name)) {
+            return details.name;
+        }
+        if (notBlank(details.description)) {
+            return details.description;
+        }
+        return furniName;
+    }
+
+    private FurniDetails lookupDetails(String furniName) {
+        if (furniName == null) {
+            return null;
+        }
+        FurniDetails details = nameToFloorItems.get(furniName);
+        return details != null ? details : nameToWallItems.get(furniName);
+    }
+
+    private String firstVariantOf(String furniName) {
+        String prefix = furniName + "*";
+        for (String candidate : nameToFloorItems.keySet()) {
+            if (candidate.startsWith(prefix)) {
+                return candidate;
+            }
+        }
+        for (String candidate : nameToWallItems.keySet()) {
+            if (candidate.startsWith(prefix)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean notBlank(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     public boolean canSupportFurniOnTop(String furniName) {

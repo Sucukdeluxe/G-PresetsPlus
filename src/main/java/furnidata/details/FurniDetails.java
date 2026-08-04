@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 // source: https://github.com/kouris-h/HabboAPI/blob/master/src/main/java/gamedata/furnidata/furnidetails/FurniDetails.java
 // by wiredspast & kouris
-abstract class FurniDetails {
+public abstract class FurniDetails {
     public final String className, category, name, description, furniline, adUrl, environment;
     public final int id, revision, offerId, rentOfferId;
     public final boolean isBC, isRare, isBuyOut, isRentBuyOut, isExcludedDynamic;

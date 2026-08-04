@@ -83,8 +83,9 @@ public class AvailabilityChecker {
 
             List<String> allItems = furniDrops.stream()
                     .map(i -> furniDataTools.getFloorItemName(i.getTypeId()))
-                    .sorted()
                     .distinct()
+                    .sorted(java.util.Comparator.comparing(
+                            name -> furniDataTools.displayName(name), String.CASE_INSENSITIVE_ORDER))
                     .collect(Collectors.toList());
 
             logger.logKey("inventory.availability.header", "black");
@@ -93,7 +94,7 @@ public class AvailabilityChecker {
                 int totalNeeded = (int)(furniDrops.stream().filter(i -> furniDataTools.getFloorItemName(i.getTypeId()).equals(className)).count());
                 int available = isMissing ? totalNeeded - missing.get(className) : totalNeeded;
 
-                logger.logNoNewline(Messages.get("inventory.availability.item.name", furniDataTools.getFloorItemDetails(className).name), "black");
+                logger.logNoNewline(Messages.get("inventory.availability.item.name", furniDataTools.displayName(className)), "black");
                 logger.logKey("inventory.availability.item.count", isMissing ? "red" : "green", available, totalNeeded);
             }
 

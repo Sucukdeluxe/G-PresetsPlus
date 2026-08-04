@@ -398,10 +398,10 @@ public class GPresetImporter {
             if (offerId == -1) {
                 if (!extension.allowIncompleteBuilds()) {
                     state = BuildingImportState.NONE;
-                    extension.sendVisualChatInfo(Messages.get("preset.import.error.bc_item_missing_abort", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.error.bc_item_missing_abort", furniData.displayName(className)));
                 }
                 else {
-                    extension.sendVisualChatInfo(Messages.get("preset.import.bc_item_missing_continue", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.bc_item_missing_continue", furniData.displayName(className)));
                 }
                 return false;
             }
@@ -422,10 +422,10 @@ public class GPresetImporter {
             if (inventoryItems.size() == 0) {
                 if (!extension.allowIncompleteBuilds()) {
                     state = BuildingImportState.NONE;
-                    extension.sendVisualChatInfo(Messages.get("preset.import.error.inventory_item_missing_abort", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.error.inventory_item_missing_abort", furniData.displayName(className)));
                 }
                 else {
-                    extension.sendVisualChatInfo(Messages.get("preset.import.inventory_item_missing_continue", className));
+                    extension.sendVisualChatInfo(Messages.get("preset.import.inventory_item_missing_continue", furniData.displayName(className)));
                 }
                 return false;
             }
@@ -445,6 +445,94 @@ public class GPresetImporter {
             Utils.sleep(150);
         }
         return true;
+    }
+
+    private void repairUnmatchedFurni(Map<Integer, PresetFurni> movesByRealId) {
+        FurniDataTools furniData = extension.getFurniDataTools();
+        if (furniData == null || workingPresetConfig == null) {
+            return;
+        }
+
+        Map<Integer, LinkedList<PresetFurni>> pendingByType = new LinkedHashMap<>();
+        for (PresetFurni preset : workingPresetConfig.getFurniture()) {
+            if (realFurniIdMap.containsKey(preset.getFurniId())) {
+                continue;
+            }
+            Integer typeId = furniData.getFloorTypeId(preset.getClassName());
+            if (typeId == null) {
+                continue;
+            }
+            if (!pendingByType.containsKey(typeId)) {
+                pendingByType.put(typeId, new LinkedList<PresetFurni>());
+            }
+            pendingByType.get(typeId).add(preset);
+        }
+        if (pendingByType.isEmpty()) {
+            return;
+        }
+
+        Set<Integer> stackTileIds = new HashSet<>();
+        for (StackTileInfo info : allAvailableStackTiles) {
+            stackTileIds.add(info.getFurniId());
+        }
+        Set<Integer> placedIds = new HashSet<>(realFurniIdMap.values());
+
+        List<HPoint> dropTiles = new ArrayList<>();
+        dropTiles.add(stackTileLocation);
+        dropTiles.add(new HPoint(stackTileLocation.getX() + 1, stackTileLocation.getY()));
+        dropTiles.add(reservedSpace);
+
+        List<HFloorItem> orphans = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        for (HPoint tile : dropTiles) {
+            if (tile == null) {
+                continue;
+            }
+            for (HFloorItem item : extension.getFloorState().getFurniOnTile(tile.getX(), tile.getY())) {
+                if (stackTileIds.contains(item.getId())
+                        || placedIds.contains(item.getId())
+                        || movesByRealId.containsKey(item.getId())) {
+                    continue;
+                }
+                if (seen.add(item.getId())) {
+                    orphans.add(item);
+                }
+            }
+        }
+        if (orphans.isEmpty()) {
+            return;
+        }
+
+        int repaired = 0;
+        for (HFloorItem orphan : orphans) {
+            if (state != BuildingImportState.MOVE_FURNITURE) {
+                return;
+            }
+            LinkedList<PresetFurni> candidates = pendingByType.get(orphan.getTypeId());
+            if (candidates == null || candidates.isEmpty()) {
+                continue;
+            }
+            PresetFurni target = candidates.pollFirst();
+            realFurniIdMap.put(target.getFurniId(), orphan.getId());
+            movesByRealId.put(orphan.getId(), target);
+
+            moveFurni(orphan.getId(),
+                    target.getLocation().getX() + rootLocation.getX(),
+                    target.getLocation().getY() + rootLocation.getY(),
+                    target.getRotation(),
+                    true,
+                    target.getLocation().getZ());
+            repaired++;
+
+            extension.getLogger().logKey("preset.import.repair.moved", "green",
+                    furniData.floorDisplayName(orphan.getTypeId()),
+                    target.getLocation().getX() + rootLocation.getX(),
+                    target.getLocation().getY() + rootLocation.getY());
+        }
+
+        if (repaired > 0) {
+            extension.getLogger().logKey("preset.import.repair.header", "orange", repaired);
+        }
     }
 
     private void moveFurni(int furniId, int x, int y, int rot, boolean moveStackTile, double height) {
@@ -680,6 +768,10 @@ public class GPresetImporter {
         }
 
         if (state == BuildingImportState.MOVE_FURNITURE) {
+            repairUnmatchedFurni(movesByRealId);
+        }
+
+        if (state == BuildingImportState.MOVE_FURNITURE) {
             for(StackTileInfo stackTileInfo : allAvailableStackTiles) {
                 moveFurni(stackTileInfo.getFurniId(), stackTileInfo.getLocation().getX(), stackTileInfo.getLocation().getY(),
                         stackTileInfo.getRotation(), false, -1);
@@ -896,6 +988,7 @@ public class GPresetImporter {
                 }
             } while (!done);
 
+            retryRejectedDrops(mainKeys, neverSent);
             reportOutstandingDrops(mainKeys, neverSent, false);
 
             synchronized (lock) {
@@ -1096,7 +1189,8 @@ public class GPresetImporter {
         FlatFurniOrder.sort(flatFurni, furniData);
         for (FlatFurniOrder.Conflict conflict : FlatFurniOrder.conflicts(flatFurni, furniData)) {
             extension.getLogger().logKey("preset.import.flat_conflict", "orange",
-                    conflict.x, conflict.y, conflict.below, conflict.above);
+                    conflict.x, conflict.y, furniData.displayName(conflict.below),
+                    furniData.displayName(conflict.above));
         }
     }
 
@@ -1122,7 +1216,7 @@ public class GPresetImporter {
         }
 
         int percent = overallPercent(phase, done, total);
-        extension.getLogger().logKey("preset.import.progress.format", "orange", what, done, total);
+        extension.getLogger().logKey("preset.import.progress.format", "orange", what, done, total, percent);
         extension.sendVisualChatInfo(
                 Messages.get("preset.import.progress.ingame", what, done, total, percent));
     }
@@ -1154,6 +1248,85 @@ public class GPresetImporter {
             return parts[0] + "," + parts[1];
         } catch (Throwable t) {
             return dropKey;
+        }
+    }
+
+    private void retryRejectedDrops(Set<String> phaseKeys, Map<String, Integer> neverSent) {
+        if (reservedSpace == null || state != BuildingImportState.ADD_FURNITURE) {
+            return;
+        }
+
+        List<String> retryKeys = new ArrayList<>();
+        synchronized (lock) {
+            for (String key : phaseKeys) {
+                LinkedList<Integer> pending = expectFurniDrops.get(key);
+                int outstanding = pending == null ? 0 : pending.size();
+                int refused = outstanding - Math.min(outstanding, neverSent.getOrDefault(key, 0));
+                for (int i = 0; i < refused; i++) {
+                    retryKeys.add(key);
+                }
+            }
+        }
+        if (retryKeys.isEmpty()) {
+            return;
+        }
+
+        extension.getLogger().logKey("preset.import.retry.start", "orange",
+                retryKeys.size(), reservedSpace.getX(), reservedSpace.getY());
+
+        for (String key : retryKeys) {
+            if (state != BuildingImportState.ADD_FURNITURE) {
+                return;
+            }
+
+            int typeId;
+            try {
+                typeId = Integer.parseInt(key.split("\\|")[2]);
+            } catch (Throwable t) {
+                continue;
+            }
+
+            String retryKey = String.format("%d|%d|%d",
+                    reservedSpace.getX(), reservedSpace.getY(), typeId);
+
+            synchronized (lock) {
+                LinkedList<Integer> pending = expectFurniDrops.get(key);
+                if (pending == null || pending.isEmpty()) {
+                    continue;
+                }
+                Integer furniId = pending.pollFirst();
+                if (pending.isEmpty()) {
+                    expectFurniDrops.remove(key);
+                }
+                if (!expectFurniDrops.containsKey(retryKey)) {
+                    expectFurniDrops.put(retryKey, new LinkedList<>());
+                }
+                expectFurniDrops.get(retryKey).add(furniId);
+                phaseKeys.add(retryKey);
+            }
+
+            dropFurni(new FurniDropInfo(reservedSpace.getX(), reservedSpace.getY(),
+                    typeId, postConfig.getItemSource(), 0));
+
+            boolean arrived = false;
+            long deadline = System.currentTimeMillis() + 2500;
+            while (System.currentTimeMillis() < deadline) {
+                synchronized (lock) {
+                    LinkedList<Integer> waiting = expectFurniDrops.get(retryKey);
+                    arrived = waiting == null || waiting.isEmpty();
+                }
+                if (arrived) {
+                    break;
+                }
+                Utils.sleep(150);
+            }
+
+            String label = extension.getFurniDataTools() == null
+                    ? String.valueOf(typeId)
+                    : extension.getFurniDataTools().floorDisplayName(typeId);
+            extension.getLogger().logKey(
+                    arrived ? "preset.import.retry.ok" : "preset.import.retry.failed",
+                    arrived ? "green" : "red", label);
         }
     }
 
@@ -1207,8 +1380,7 @@ public class GPresetImporter {
         try {
             int typeId = Integer.parseInt(key.split("\\|")[2]);
             FurniDataTools furniData = extension.getFurniDataTools();
-            String className = furniData == null ? null : furniData.getFloorItemName(typeId);
-            return className != null ? className : ("typeId " + typeId);
+            return furniData == null ? String.valueOf(typeId) : furniData.floorDisplayName(typeId);
         } catch (Throwable t) {
             return key;
         }
@@ -1221,9 +1393,8 @@ public class GPresetImporter {
             int y = Integer.parseInt(parts[1]);
             int typeId = Integer.parseInt(parts[2]);
             FurniDataTools furniData = extension.getFurniDataTools();
-            String className = furniData == null ? null : furniData.getFloorItemName(typeId);
             return Messages.get("preset.import.rejected.item",
-                    className != null ? className : ("typeId " + typeId), x, y);
+                    furniData == null ? String.valueOf(typeId) : furniData.floorDisplayName(typeId), x, y);
         } catch (Throwable t) {
             return key;
         }
@@ -1244,8 +1415,9 @@ public class GPresetImporter {
             try {
                 String[] parts = entry.getKey().split("\\|");
                 int typeId = Integer.parseInt(parts[2]);
-                String resolved = furniData == null ? null : furniData.getFloorItemName(typeId);
-                className = resolved != null ? resolved : ("typeId " + typeId);
+                if (furniData != null) {
+                    className = furniData.floorDisplayName(typeId);
+                }
             } catch (Throwable ignored) {
             }
 

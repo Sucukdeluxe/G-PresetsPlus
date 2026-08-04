@@ -91,7 +91,7 @@ public class WallItemsSnapshot {
             }
             Integer typeId = furniData.getWallTypeId(item.className);
             if (typeId == null) {
-                logger.logKey("wallitems.not_in_furnidata", "orange", item.className);
+                logger.logKey("wallitems.not_in_furnidata", "orange", furniData.displayName(item.className));
                 skipped++;
                 continue;
             }
@@ -100,7 +100,7 @@ public class WallItemsSnapshot {
             }
             HInventoryItem inventoryItem = byType.get(typeId).pollFirst();
             if (inventoryItem == null) {
-                logger.logKey("wallitems.not_in_inventory", "orange", item.className);
+                logger.logKey("wallitems.not_in_inventory", "orange", furniData.displayName(item.className));
                 skipped++;
                 continue;
             }
@@ -111,7 +111,7 @@ public class WallItemsSnapshot {
                 lastKnownStates.put(inventoryItem.getId(), readState(added));
                 applyState(executor, inventoryItem.getId(), item.state);
             } else {
-                logger.logKey("wallitems.place_failed", "orange", item.className);
+                logger.logKey("wallitems.place_failed", "orange", furniData.displayName(item.className));
                 skipped++;
             }
         }
